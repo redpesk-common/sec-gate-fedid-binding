@@ -38,19 +38,6 @@ PROJECT_TARGET_ADD(fedid-binding)
     target_link_libraries(${TARGET_NAME} sqldb-glue fedid-types)
 	target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/sqldb-glue ${CMAKE_CURRENT_SOURCE_DIR}/fedid-types)
 
-INSTALL(FILES ${CHEADERS}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-
-include(GNUInstallDirs)
-configure_file(../${TARGET_NAME}.pc.in ${TARGET_NAME}.pc @ONLY)
-
-INSTALL(FILES
-		${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.pc
-		DESTINATION
-        ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-	)
-
 add_subdirectory(sqldb-glue)
 add_subdirectory(fedid-types)
 

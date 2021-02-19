@@ -70,14 +70,14 @@ static void fedIdCreateProfil(afb_req_t request, unsigned nparams, afb_data_t co
 
     // make sure we get right input parameters types
     if (nparams != 2) goto OnErrorExit;
-    err = afb_data_convert(params[0], userObjType, &args[0]);
+    err = afb_data_convert(params[0], fedUserObjType, &args[0]);
     if (err < 0) goto OnErrorExit;
-    err = afb_data_convert(params[1], socialObjType, &args[1]);
+    err = afb_data_convert(params[1], fedSocialObjType, &args[1]);
     if (err < 0) goto OnErrorExit;
 
     // extract raw object from params
-    const userObjRawT *userProfil= afb_data_ro_pointer(args[0]);
-    const socialObjRawT *socialProfil= afb_data_ro_pointer(args[1]);
+    const fedUserRawT *userProfil= afb_data_ro_pointer(args[0]);
+    const fedSocialRawT *socialProfil= afb_data_ro_pointer(args[1]);
 
     snprintf(query, sizeof(query)
         , "INSERT INTO fed_profil(pseudo, email, avatar, company, loa, stamp) values(%s,%s,%s,%s,%ld,%ld);"
@@ -109,7 +109,7 @@ OnErrorExit:
 }
 
 static void fedidProfileFreeCB (void *data) {
-    userObjRawT *userProfil= (userObjRawT*)data;
+    fedUserRawT *userProfil= (fedUserRawT*)data;
 
     if (userProfil->pseudo) free ((void*)userProfil->pseudo);
     if (userProfil->email) free ((void*)userProfil->email);
@@ -127,7 +127,7 @@ static int fedIdProfilIdCB(void *ctx, int count, char **values, char **columns) 
 
   if (count == 0) afb_req_reply(request, 0, 0, NULL);
   else {
-    userObjRawT *userProfil = calloc(1, sizeof(userObjRawT));
+    fedUserRawT *userProfil = calloc(1, sizeof(fedUserRawT));
 
     for (int idx = 0; idx < count; idx++) {
         if (!strcasecmp(columns[idx], "id")) sscanf (values[idx], "%ld", &userProfil->id);
@@ -139,7 +139,7 @@ static int fedIdProfilIdCB(void *ctx, int count, char **values, char **columns) 
         else if (!strcasecmp(columns[idx], "stamp")) sscanf (values[idx], "%ld", &userProfil->stamp);
     }
 
-    err= afb_create_data_raw(&reply, userObjType, userProfil, 0, fedidProfileFreeCB, userProfil);
+    err= afb_create_data_raw(&reply, fedUserObjType, userProfil, 0, fedidProfileFreeCB, userProfil);
     if (err) goto OnErrorExit;
     afb_req_reply(request, 0, 1, &reply);
   }
@@ -235,7 +235,7 @@ static int fedidCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void
             goto OnErrorExit;
         }
 
-        err= userObjTypesRegister();
+        err= fedUserObjTypesRegister();
         if (err) {
             AFB_ERROR("[register-type fail] Fail to register fedid type");
             goto OnErrorExit;

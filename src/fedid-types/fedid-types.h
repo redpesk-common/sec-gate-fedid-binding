@@ -36,7 +36,7 @@ typedef struct {
     const char *email;
     const char *avatar;
     const char *company;
-} userObjRawT;
+} fedUserRawT;
 
 typedef struct {
     long id; // unique main db id
@@ -44,8 +44,8 @@ typedef struct {
     long stamp;
     const char *idp;
     const char *fedkey;
-} socialObjRawT;
+} fedSocialRawT;
 
-int userObjTypesRegister ();
-extern afb_type_t userObjType;
-extern afb_type_t socialObjType;
+int fedUserObjTypesRegister ();
+extern afb_type_t fedUserObjType;
+extern afb_type_t fedSocialObjType;

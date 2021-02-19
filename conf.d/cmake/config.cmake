@@ -79,9 +79,6 @@ set (PKG_REQUIRED_LIST
 
 # Print a helper message when every thing is finished
 # ----------------------------------------------------
-if(IS_DIRECTORY $ENV{HOME}/opt/afb-monitoring)
-set(MONITORING_ALIAS "--alias=/monitoring:$ENV{HOME}/opt/afb-monitoring")
-endif()
 set( CLOSING_MESSAGE "afb-binder --name=afb-fedid --binding=package/lib/fedid-binding.so -vvv # http://localhost:1234/devtools/index.html")
 set(PACKAGE_MESSAGE "Install widget file using in the target : afm-util install ${PROJECT_NAME}.wgt")
 
@@ -108,7 +105,7 @@ set(C_COMPILE_OPTIONS "" CACHE STRING "Compilation flags for C language.")
 
 # (BUG!!!) as PKG_CONFIG_PATH does not work [should be an env variable]
 # ---------------------------------------------------------------------
-set(INSTALL_PREFIX $ENV{HOME}/opt)
+set(INSTALL_PREFIX /usr/local)
 set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX}/lib64/pkgconfig ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig)
 set(LD_LIBRARY_PATH ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
 

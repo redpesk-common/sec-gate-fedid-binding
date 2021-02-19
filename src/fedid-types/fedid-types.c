@@ -35,24 +35,24 @@
 #include <assert.h>
 
 typedef struct {
-   userObjRawT raw; 
+   fedUserRawT raw; 
    const json_object *json;
 } userObjHandleT;
 
-afb_type_t userObjType=NULL;
+afb_type_t fedUserObjType=NULL;
 
 typedef struct {
-   socialObjRawT raw; 
+   fedSocialRawT raw; 
    const json_object *json;
 } socialObjHandleT;
 
-afb_type_t socialObjType=NULL;
+afb_type_t fedSocialObjType=NULL;
 
 static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb_data_t *dest) {
     assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
-    assert(afb_data_type (socialD) == socialObjType);
+    assert(afb_data_type (socialD) == fedSocialObjType);
     json_object *socialJ;
-    const socialObjRawT *social =  afb_data_ro_pointer(socialD);
+    const fedSocialRawT *social =  afb_data_ro_pointer(socialD);
 
     int err= wrap_json_pack (&socialJ, "{si si si ss ss}"
         ,"id", social->id
@@ -74,13 +74,13 @@ OnErrorExit:
 static void socialFreeCB (void *data) {
     socialObjHandleT *social= (socialObjHandleT*)data;
 
-    json_object_put((json_object*)social->json);
+    if (social->json) json_object_put((json_object*)social->json);
     free (data);
 }
 
 static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, afb_data_t *dest) {
     int err;
-    assert(socialObjType == socialT);
+    assert(fedSocialObjType == socialT);
     assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // socialRaw depend on socialJson we have dest lock json object until raw object die.
@@ -88,7 +88,7 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     social->json=afb_data_ro_pointer(jsonD);
     json_object_get ((json_object*)social->json);
 
-    //socialObjRawT *social= calloc (1, sizeof(socialObjRawT));
+    //fedSocialRawT *social= calloc (1, sizeof(fedSocialRawT));
     err= afb_create_data_raw (dest, socialT, &social->raw, sizeof(socialObjHandleT),socialFreeCB, social);
     if (err) goto OnErrorExit;
 
@@ -109,9 +109,9 @@ OnErrorExit:
 
 static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_data_t *dest) {
     assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
-    assert(afb_data_type (userD) == userObjType);
+    assert(afb_data_type (userD) == fedUserObjType);
     json_object *userJ;
-    const userObjRawT *user =  afb_data_ro_pointer(userD);
+    const fedUserRawT *user =  afb_data_ro_pointer(userD);
 
     int err= wrap_json_pack (&userJ, "{si si si ss* ss* ss*}"
         ,"id", user->id
@@ -134,13 +134,13 @@ OnErrorExit:
 static void userFreeCB (void *data) {
     userObjHandleT *user= (userObjHandleT*)data;
 
-    json_object_put((json_object*)user->json);
+    if (user->json) json_object_put((json_object*)user->json);
     free (data);
 }
 
 static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_data_t *dest) {
     int err;
-    assert(userObjType == userT);
+    assert(fedUserObjType == userT);
     assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // userRaw depend on userJson we have dest lock json object until raw object die.
@@ -148,7 +148,7 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     user->json=afb_data_ro_pointer(jsonD);
     json_object_get ((json_object*)user->json);
 
-    //userObjRawT *user= calloc (1, sizeof(userObjRawT));
+    //fedUserRawT *user= calloc (1, sizeof(fedUserRawT));
     err= afb_create_data_raw (dest, userT, &user->raw, sizeof(userObjHandleT),userFreeCB, user);
     if (err) goto OnErrorExit;
 
@@ -167,19 +167,19 @@ OnErrorExit:
     return -1;    
 }
 
-int userObjTypesRegister () {
+int fedUserObjTypesRegister () {
     int err;
     void *context=NULL;
 
-    err= afb_type_register(&socialObjType, SOCIAL_PROFIL_TYPE, 0 /* not opac */);
+    err= afb_type_register(&fedSocialObjType, SOCIAL_PROFIL_TYPE, 0 /* not opac */);
     if (err) goto OnErrorExit;
-    afb_type_add_convert_to (socialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialToJsonCB, context);
-    afb_type_add_convert_from (socialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialFromJsonCB, context);
+    afb_type_add_convert_to (fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialToJsonCB, context);
+    afb_type_add_convert_from (fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialFromJsonCB, context);
 
-    err= afb_type_register(&userObjType, USER_PROFIL_TYPE, 0 /* not opac */);
+    err= afb_type_register(&fedUserObjType, USER_PROFIL_TYPE, 0 /* not opac */);
     if (err) goto OnErrorExit;
-    afb_type_add_convert_to (userObjType, AFB_PREDEFINED_TYPE_JSON_C, userToJsonCB, context);
-    afb_type_add_convert_from (userObjType, AFB_PREDEFINED_TYPE_JSON_C, userFromJsonCB, context);
+    afb_type_add_convert_to (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userToJsonCB, context);
+    afb_type_add_convert_from (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userFromJsonCB, context);
 
     return 0;
 
