@@ -29,16 +29,19 @@
 #define SOCIAL_PROFIL_TYPE "social-profil"
 
 typedef struct {
+    int ucount;
     long id; // unique main db id
     long loa;
     long stamp;
     const char *pseudo;
+    const char *name;
     const char *email;
     const char *avatar;
     const char *company;
 } fedUserRawT;
 
 typedef struct {
+    int ucount;
     long id; // unique main db id
     long loa;
     long stamp;
@@ -49,3 +52,6 @@ typedef struct {
 int fedUserObjTypesRegister ();
 extern afb_type_t fedUserObjType;
 extern afb_type_t fedSocialObjType;
+
+void fedUserFreeCB (void *fedUserRawT);
+void fedSocialFreeCB (void *fedSocialRawT);

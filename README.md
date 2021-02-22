@@ -10,3 +10,16 @@ Sandbox security model scales from simple Linux access control to advanced mecha
 fedid-binding can be used in standalone to provide a simple secure HTML5 interface to your preferred scripts. When used in conjunction with AGL/AFB framework its also leverage SeLinux/Smack to check API access with Cynara.
 
 ![fedid-biding-html5](docs/assets/fedid-binding-dirconf.jpg)
+
+
+Fulup notes:
+ * si double click sur login alors on popup pour logout ou anulation
+ 
+ * si federate on ajoute un link de fedsocial de plus
+
+ * prevoir le parsing des roles dans les idp
+ * ajouter la notion de label de securité
+
+ * prevoir une double authentification (oidc + badge)
+
+ * ajouter un timeout sur les session par profil 

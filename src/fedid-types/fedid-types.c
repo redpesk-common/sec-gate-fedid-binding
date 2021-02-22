@@ -37,16 +37,41 @@
 typedef struct {
    fedUserRawT raw; 
    const json_object *json;
-} userObjHandleT;
+} userObjHdlT;
 
 afb_type_t fedUserObjType=NULL;
 
 typedef struct {
    fedSocialRawT raw; 
    const json_object *json;
-} socialObjHandleT;
+} socialObjHdlT;
 
 afb_type_t fedSocialObjType=NULL;
+
+
+void fedUserFreeCB (void *data) {
+    fedUserRawT *userProfil= (fedUserRawT*)data;
+    if (!userProfil) return;
+    if (userProfil->ucount-- > 0) return;
+
+    if (userProfil->pseudo) free ((void*)userProfil->pseudo);
+    if (userProfil->email) free ((void*)userProfil->email);
+    if (userProfil->name) free ((void*)userProfil->name);
+    if (userProfil->avatar) free ((void*)userProfil->avatar);
+    if (userProfil->company) free ((void*)userProfil->company);
+    free (userProfil);
+}
+
+void fedSocialFreeCB (void*ctx) {
+	fedSocialRawT *fedSocial= (fedSocialRawT*)ctx;
+    if (!fedSocial) return;
+    if (fedSocial->ucount-- > 0) return;
+
+	if (fedSocial->idp) free ((void*)  fedSocial->idp);
+	if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
+	free (fedSocial);
+}
+
 
 static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb_data_t *dest) {
     assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
@@ -72,7 +97,7 @@ OnErrorExit:
 }
 
 static void socialFreeCB (void *data) {
-    socialObjHandleT *social= (socialObjHandleT*)data;
+    socialObjHdlT *social= (socialObjHdlT*)data;
 
     if (social->json) json_object_put((json_object*)social->json);
     free (data);
@@ -84,12 +109,12 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // socialRaw depend on socialJson we have dest lock json object until raw object die.
-    socialObjHandleT *social= calloc (1, sizeof(socialObjHandleT));
+    socialObjHdlT *social= calloc (1, sizeof(socialObjHdlT));
     social->json=afb_data_ro_pointer(jsonD);
     json_object_get ((json_object*)social->json);
 
     //fedSocialRawT *social= calloc (1, sizeof(fedSocialRawT));
-    err= afb_create_data_raw (dest, socialT, &social->raw, sizeof(socialObjHandleT),socialFreeCB, social);
+    err= afb_create_data_raw (dest, socialT, &social->raw, sizeof(socialObjHdlT),socialFreeCB, social);
     if (err) goto OnErrorExit;
 
     err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{si si si ss ss}"
@@ -105,7 +130,6 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
 OnErrorExit:
     return -1;    
 }
-
 
 static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_data_t *dest) {
     assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
@@ -132,7 +156,7 @@ OnErrorExit:
 }
 
 static void userFreeCB (void *data) {
-    userObjHandleT *user= (userObjHandleT*)data;
+    userObjHdlT *user= (userObjHdlT*)data;
 
     if (user->json) json_object_put((json_object*)user->json);
     free (data);
@@ -144,12 +168,12 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // userRaw depend on userJson we have dest lock json object until raw object die.
-    userObjHandleT *user= calloc (1, sizeof(userObjHandleT));
+    userObjHdlT *user= calloc (1, sizeof(userObjHdlT));
     user->json=afb_data_ro_pointer(jsonD);
     json_object_get ((json_object*)user->json);
 
     //fedUserRawT *user= calloc (1, sizeof(fedUserRawT));
-    err= afb_create_data_raw (dest, userT, &user->raw, sizeof(userObjHandleT),userFreeCB, user);
+    err= afb_create_data_raw (dest, userT, &user->raw, sizeof(userObjHdlT),userFreeCB, user);
     if (err) goto OnErrorExit;
 
     err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{si si ss ss? ss? ss?}"

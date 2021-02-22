@@ -30,10 +30,11 @@
 static sqlite3 *dbFd = NULL;
 
 const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
-    "CREATE TABLE fed_profil"
+    "CREATE TABLE fed_users"
     " ('id' INTEGER PRIMARY KEY AUTOINCREMENT"
     " ,'pseudo'  text NOT NULL"
     " ,'email'   text NOT NULL"
+    " ,'name'  text"
     " ,'avatar'  text"
     " ,'company' text"
     " ,'loa' integer"
@@ -47,7 +48,7 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     " ,'idp_uid' text NOT NULL"
     " ,'fed_key' text NOT NULL"
     " ,'stamp' integer"
-    " ,'user' INT UNSIGNED NOT NULL REFERENCES fed_profil('id')"
+    " ,'user' INT UNSIGNED NOT NULL REFERENCES fed_users('id')"
     " ,UNIQUE ('idp_uid', 'fed_key'), unique('user')"
     ");"
     "CREATE TABLE fed_label"
