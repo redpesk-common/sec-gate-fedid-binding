@@ -8,6 +8,6 @@ Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
 
 Requires:
-Libs: -L${libdir}/@TARGET_NAME@/lib -l@TARGET_NAME@
+Libs: -L${prefix}/@PROJECT_NAME@/lib -l@TARGET_NAME@
 Cflags: -I${includedir}%
 

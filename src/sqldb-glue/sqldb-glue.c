@@ -54,6 +54,7 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     "CREATE TABLE fed_label"
     " ('id' INTEGER PRIMARY KEY AUTOINCREMENT"
     " ,'label_uid' text NOT NULL"
+    " ,'secret' text"
     " , 'loa' integer"
     " ,'epoc_create' integer"
     " ,'epoc_start'  integer"
