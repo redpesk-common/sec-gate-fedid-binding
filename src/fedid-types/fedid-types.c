@@ -21,10 +21,7 @@
  * $RP_END_LICENSE$
  */
 #define _GNU_SOURCE
-#define AFB_BINDING_VERSION 4
-#include <afb/afb-binding-x4.h>
-#include <afb/afb-binding.h>
-
+#define AFB_BINDING_NO_ROOT
 #include "fedid-types.h"
 
 #include <json-c/json.h>
