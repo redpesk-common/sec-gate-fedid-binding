@@ -20,6 +20,7 @@ PROJECT_TARGET_ADD(fedid-types)
 	# compilation include path 
 	target_include_directories (${TARGET_NAME}
 	    INTERFACE "${CMAKE_SOURCE_DIR}"
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..
     )
 
 include(GNUInstallDirs)

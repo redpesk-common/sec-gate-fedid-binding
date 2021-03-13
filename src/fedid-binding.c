@@ -21,8 +21,7 @@
  * $RP_END_LICENSE$
  */
 #define _GNU_SOURCE
-#define AFB_BINDING_VERSION 4
-#include <afb/afb-binding.h>
+
 
 #include "fedid-binding.h"
 #include "sqldb-glue.h"
@@ -44,6 +43,29 @@ static void fedPing(afb_req_t request, unsigned nparams, afb_data_t const params
   return;
 }
 
+static void fedUserAttr(afb_req_x4_t request, unsigned nparams, afb_data_x4_t const params[]) {
+    afb_data_t args[nparams];
+    const char *values[nparams];
+    int err;
+
+    if (nparams != 2) goto OnErrorExit;
+
+    // retreive feduser from API argv[0]
+    for (int idx=0; idx < 2; idx++) {
+        err = afb_data_convert(params[idx], AFB_PREDEFINED_TYPE_STRINGZ, &args[idx]);
+        values[idx]= afb_data_ro_pointer(args[idx]);
+        if (err < 0) goto OnErrorExit;
+    }
+
+    err= sqlUserAttrCheck (request, values[0], values[1]);
+    afb_req_reply(request, err, 0, NULL);
+
+    return;
+
+OnErrorExit:
+    afb_req_reply(request, FEDID_ERROR, 0, NULL);  
+}
+
 // Link in new social id with an existing profil id
 static void fedSocialLink(afb_req_t request, unsigned nparams, afb_data_t const params[]) {
   static int count = 0;
@@ -61,12 +83,8 @@ static void fedSocialLink(afb_req_t request, unsigned nparams, afb_data_t const 
 
 // Create a new user profil and link it to its social id
 static void fedUserRegister(afb_req_t request, unsigned nparams, afb_data_t const params[]) {
-    char *errorMsg= "fail to create user profile (fedUserRegister)";
-    char query[256];
     int err;
-    afb_data_t reply;
     afb_data_t argv[nparams];
-    unsigned long timeStamp= (unsigned long)time(NULL);
 
     // make sure we get right input parameters types
     if (nparams != 2) goto OnErrorExit;
@@ -76,104 +94,16 @@ static void fedUserRegister(afb_req_t request, unsigned nparams, afb_data_t cons
     if (err < 0) goto OnErrorExit;
 
     // extract raw object from params
-    const fedUserRawT *fedUser= afb_data_ro_pointer(argv[0]);
-    const fedSocialRawT *socialProfil= afb_data_ro_pointer(argv[1]);
+    fedUserRawT *fedUser= afb_data_rw_pointer(argv[0]);
+    fedSocialRawT *fedSocial= afb_data_ro_pointer(argv[1]);
 
-    snprintf(query, sizeof(query)
-        , "INSERT INTO fed_users(pseudo, email, name, avatar, company, loa, stamp) values(%s,%s,%s,%s,%s,%ld,%ld);"
-        , fedUser->pseudo, fedUser->email, fedUser->name, fedUser->avatar, fedUser->company
-        , socialProfil->loa, timeStamp
-    );
-    err = sqlQuery(query, &errorMsg, NULL, NULL);
-    if (err) {
-      afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, sqlFree, errorMsg);
-      goto OnErrorExit;
-    }
-    long userid= sqlLastRow ();
-    snprintf(query, sizeof(query)
-        , "INSERT INTO fed_keys(idp_uid, fed_key, user, stamp) values(%s,%s,%ld,%ld);"
-        , socialProfil->idp, socialProfil->fedkey, userid, timeStamp
-    );
-    err = sqlQuery(query, &errorMsg, NULL, NULL);
-    if (err) {
-      afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, sqlFree, errorMsg);
-      goto OnErrorExit;
-    }
-
-    afb_req_reply(request, 0, 0, 0);
+    err= sqlRegisterFromSocial (request, fedSocial, fedUser);
+    if (err < 0) goto OnErrorExit;
+    afb_req_reply(request, err, 0, NULL);
     return;
 
 OnErrorExit:
-    afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, free, NULL);
-    afb_req_reply(request, -1, 1, &reply);  
-}
-
-
-
-// return an existing profil
-static int fedUserIdCB(void *ctx, int count, char **values, char **columns) {
-  char *errorMsg= "[query-profil-fail] internal error in (fedSocialCheckCB)";
-  afb_req_t request = (afb_req_t)ctx;
-  afb_data_t reply;
-  int err;
-
-  if (count == 0) afb_req_reply(request, 0, 0, NULL);
-  else {
-    fedUserRawT *fedUser = calloc(1, sizeof(fedUserRawT));
-
-    for (int idx = 0; idx < count; idx++) {
-        if (!strcasecmp(columns[idx], "id")) sscanf (values[idx], "%ld", &fedUser->id);
-        else if (!strcasecmp(columns[idx], "pseudo")) fedUser->pseudo= strdup(values[idx]);
-        else if (!strcasecmp(columns[idx], "email")) fedUser->email= strdup(values[idx]);
-        else if (!strcasecmp(columns[idx], "name")) fedUser->name= strdup(values[idx]);
-        else if (!strcasecmp(columns[idx], "avatar")) fedUser->avatar= strdup(values[idx]);
-        else if (!strcasecmp(columns[idx], "company")) fedUser->company= strdup(values[idx]);
-        else if (!strcasecmp(columns[idx], "loa")) sscanf (values[idx], "%ld", &fedUser->loa);
-        else if (!strcasecmp(columns[idx], "stamp")) sscanf (values[idx], "%ld", &fedUser->stamp);
-    }
-
-    err= afb_create_data_raw(&reply, fedUserObjType, fedUser, 0, fedUserFreeCB, fedUser);
-    if (err) goto OnErrorExit;
-    afb_req_reply(request, 0, 1, &reply);
-  }
-  return 0;
-
-OnErrorExit: 
-    afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, sizeof(errorMsg), NULL, NULL);
-    afb_req_reply(request, -1, 1, &reply);
-    return -1;
-}
-
-// if a social id exist return it corresponding user profil
-static int fedSocialCheckCB(void *ctx, int count, char **values, char **columns) {
-  char *errorMsg= "[query-profil-fail] internal error in (fedSocialCheckCB)";
-  afb_req_t request = (afb_req_t)ctx;
-  afb_data_t reply;
-  int err;
-  char query[256];
-
-  // if profile does not exit respond -1 status with no params
-  if (count != 1)
-    afb_req_reply(request, 0, 0, NULL);
-  else {
-    err = snprintf(query, sizeof(query), "select 'user' from fed_users where id=%s;", values[0]);
-    if (err) {
-      afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, sizeof(errorMsg), NULL, NULL);
-      goto OnErrorExit;
-    }
-
-    err = sqlQuery(query, &errorMsg, fedUserIdCB, (void*)request);
-    if (err) {
-      afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, sqlFree, errorMsg);
-      goto OnErrorExit;
-    }
-  }
-  return 0;
-
-OnErrorExit:
-  afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, sqlFree, errorMsg);
-  afb_req_reply(request, -1, 1, &reply);
-  return 0;
+    afb_req_reply(request, FEDID_ERROR, 0, NULL);  
 }
 
 // check if social id is already present within federation table
@@ -182,7 +112,6 @@ static void fedSocialCheck(afb_req_t request, unsigned nparams, afb_data_t const
     int err;
     afb_data_t reply;
     afb_data_t argv[nparams];
-    char query[256];
 
     if (nparams != 1) goto OnErrorExit;
 
@@ -192,59 +121,18 @@ static void fedSocialCheck(afb_req_t request, unsigned nparams, afb_data_t const
       afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, NULL, NULL);
       goto OnErrorExit;
     }
+
+    // check if user exist
     const fedSocialRawT *fedSocial= afb_data_ro_pointer(argv[0]);
-
-    err = snprintf(
-        query, sizeof(query),
-        "select 'user' from fed_keys where idp_uid=%s and social_uid=%s;", fedSocial->idp, fedSocial->fedkey
-    );
-    if (err) {
-      afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, sqlFree, errorMsg);
-      goto OnErrorExit;
-    }
-
-    err = sqlQuery(query, &errorMsg, fedSocialCheckCB, (void*)request);
-    if (err) goto OnErrorExit;
-
-    return;
-
-OnErrorExit:
-    afb_req_reply(request, -1, 1, &reply);
-}
-
-static int fedUniqueCB(void *ctx, int count, char **values, char **columns) {
-  if (count >0 ) fprintf (stderr, "*** fedUniqueCB count=%d\n", count);
-  return count;
-}
-
-// check if user email or pseudo is already in DB
-static void fedUserUnique(afb_req_t request, unsigned nparams, afb_data_t const params[]) {
-    char *errorMsg="[invalid-feduser] fail to retreive feduser from params (fedUserUnique)";
-    int err, count;
-    afb_data_t reply;
-    afb_data_t argv[nparams];
-    char query[256];
-
-    if (nparams != 1) goto OnErrorExit;
-
-    err = afb_data_convert(params[0], fedUserObjType, &argv[0]);
+    err= sqlQueryFromSocial (request, fedSocial, &reply);
     if (err < 0) goto OnErrorExit;
-    const fedUserRawT *fedUser= afb_data_ro_pointer(argv[0]);
-
-    err = snprintf(
-        query, sizeof(query),
-        "select 'user' from fed_users where email=%s or pseudo=%s;", fedUser->email, fedUser->pseudo
-    );
-    if (err) goto OnErrorExit;
-
-    count = sqlQuery(query, &errorMsg, fedUniqueCB, (void*)request);
-    afb_req_reply(request, count, 0, NULL);
-
+    
+    if (reply == NULL) afb_req_reply(request, FEDID_USER_UNKNOWN, 0, NULL);
+    else  afb_req_reply(request, FEDID_USER_EXIST, 1, &reply);
     return;
 
 OnErrorExit:
-    afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, NULL, NULL);
-    afb_req_reply(request, -1, 1, &reply);
+    afb_req_reply(request, FEDID_ERROR, 0, NULL);
 }
 
 static int fedCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdata) {
@@ -302,13 +190,13 @@ OnErrorExit:
   const afb_verb_t verbs[] = {
       {.verb = "fedPing", .callback = fedPing},
       {.verb = "user-create", .callback = fedUserRegister},
-      {.verb = "user-unique", .callback = fedUserUnique},
+      {.verb = "attr-check", .callback = fedUserAttr},
       {.verb = "social-check", .callback = fedSocialCheck},
       {.verb = "social-link", .callback = fedSocialLink},
       {.verb = NULL}};
 
   const struct afb_binding_v4 afbBindingV4 = {
-      .api = "fed",
+      .api = "fedid",
       .specification = "Federated Identity handling with an SQLlite backend",
       .verbs = verbs,
       .mainctl = fedCtrl,

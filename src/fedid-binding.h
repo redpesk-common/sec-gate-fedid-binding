@@ -23,9 +23,8 @@
 #pragma once
 
 #define AFB_BINDING_VERSION 4
-#include <afb/afb-binding-x4.h>
+#include <afb/afb-binding.h>
 
 #define FEDID_SQLLITE_PATH "/tmp/fedid.db"
-
 
 #include "fedid-types.h"

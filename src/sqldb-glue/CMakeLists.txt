@@ -14,5 +14,5 @@ PROJECT_TARGET_ADD(sqldb-glue)
 	# compilation include path
 	target_include_directories(${TARGET_NAME}
 	    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
-	    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..
+	    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../fedid-types
     )

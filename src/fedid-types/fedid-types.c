@@ -21,7 +21,11 @@
  * $RP_END_LICENSE$
  */
 #define _GNU_SOURCE
+
 #define AFB_BINDING_NO_ROOT
+#define AFB_BINDING_VERSION 4
+#include <afb/afb-binding.h>
+
 #include "fedid-types.h"
 
 #include <json-c/json.h>
@@ -36,14 +40,14 @@ typedef struct {
    const json_object *json;
 } userObjHdlT;
 
-afb_type_t fedUserObjType=NULL;
+struct afb_type_x4 * fedUserObjType=NULL;
 
 typedef struct {
    fedSocialRawT raw; 
    const json_object *json;
 } socialObjHdlT;
 
-afb_type_t fedSocialObjType=NULL;
+struct afb_type_x4 *fedSocialObjType=NULL;
 
 
 void fedUserFreeCB (void *data) {
@@ -134,11 +138,13 @@ static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_dat
     json_object *userJ;
     const fedUserRawT *user =  afb_data_ro_pointer(userD);
 
-    int err= wrap_json_pack (&userJ, "{si si si ss* ss* ss*}"
+    int err= wrap_json_pack (&userJ, "{si ss si si ss ss* ss* ss*}"
         ,"id", user->id
+        ,"pseudo", user->pseudo
         ,"loa", user->loa
         ,"stamp", user->stamp
         ,"email", user->email
+        ,"name", user->name
         ,"avatar", user->avatar
         ,"company", user->company
     );
@@ -173,11 +179,13 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     err= afb_create_data_raw (dest, userT, &user->raw, sizeof(userObjHdlT),userFreeCB, user);
     if (err) goto OnErrorExit;
 
-    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{si si ss ss? ss? ss?}"
+    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{si ss si si ss ss? ss? ss?}"
         ,"id", &user->raw.id
+        ,"pseudo", &user->raw.pseudo
         ,"loa", &user->raw.loa
         ,"stamp", &user->raw.stamp
         ,"email", &user->raw.email
+        ,"name", &user->raw.name
         ,"avatar", &user->raw.avatar
         ,"company", &user->raw.company
     );
@@ -189,8 +197,12 @@ OnErrorExit:
 }
 
 int fedUserObjTypesRegister () {
+    static int initialized=0;
     int err;
     void *context=NULL;
+
+    // type should be loaded only once per binder
+    if (initialized) return 0;
 
     err= afb_type_register(&fedSocialObjType, SOCIAL_PROFIL_TYPE, 0 /* not opac */);
     if (err) goto OnErrorExit;
@@ -202,6 +214,7 @@ int fedUserObjTypesRegister () {
     afb_type_add_convert_to (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userToJsonCB, context);
     afb_type_add_convert_from (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userFromJsonCB, context);
 
+    initialized=1;
     return 0;
 
 OnErrorExit:

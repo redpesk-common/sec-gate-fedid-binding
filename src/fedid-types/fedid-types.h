@@ -22,11 +22,23 @@
 */
 #pragma once
 
-#define AFB_BINDING_VERSION 4
-#include <afb/afb-binding-x4.h>
-
 #define USER_PROFIL_TYPE "user-profil"
 #define SOCIAL_PROFIL_TYPE "social-profil"
+
+typedef enum {
+    FEDID_ERROR= -100,
+    FEDID_DONE=0,
+
+    FEDID_USER_EXIST= 200,
+    FEDID_USER_UNKNOWN= 404,
+    FEDID_USER_REFUSED= 405,
+
+    FEDID_ATTR_USED= 406,
+    FEDID_ATTR_FREE= 407,
+
+} fedidStatusE;
+
+
 
 typedef struct {
     int ucount;
@@ -50,8 +62,8 @@ typedef struct {
 } fedSocialRawT;
 
 int fedUserObjTypesRegister ();
-extern afb_type_t fedUserObjType;
-extern afb_type_t fedSocialObjType;
+extern struct afb_type_x4 *fedUserObjType;
+extern struct afb_type_x4 *fedSocialObjType;
 
 void fedUserFreeCB (void *fedUserRawT);
 void fedSocialFreeCB (void *fedSocialRawT);

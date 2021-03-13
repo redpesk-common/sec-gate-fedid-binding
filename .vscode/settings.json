@@ -8,5 +8,8 @@
         "libcap",
         "redpesk",
         "seccomp"
-    ]
+    ],
+    "files.associations": {
+        "afb-binding.h": "c"
+    }
 }

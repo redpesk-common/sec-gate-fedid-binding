@@ -22,8 +22,13 @@
 */
 #pragma once
 
+#include "fedid-types.h"
+
+#define AFB_BINDING_VERSION 4
+#include <afb/afb-binding.h>
+
 typedef int (*sqlQueryCbT)(void*,int,char**,char**);
 int sqlCreate(const char *dbpath, char **response);
-int sqlQuery(const char *query, char **errorMsg, sqlQueryCbT callback, void *ctx);
-void sqlFree (void *object);
-long sqlLastRow (void);
+int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_data_t *response);
+int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser);
+int sqlUserAttrCheck (afb_req_t request, const char* attrLabel, const char *attrValue);
