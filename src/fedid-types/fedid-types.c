@@ -35,20 +35,8 @@
 #include <string.h>
 #include <assert.h>
 
-typedef struct {
-   fedUserRawT raw; 
-   const json_object *json;
-} userObjHdlT;
-
-struct afb_type_x4 * fedUserObjType=NULL;
-
-typedef struct {
-   fedSocialRawT raw; 
-   const json_object *json;
-} socialObjHdlT;
-
+struct afb_type_x4 *fedUserObjType=NULL;
 struct afb_type_x4 *fedSocialObjType=NULL;
-
 
 void fedUserFreeCB (void *data) {
     fedUserRawT *userProfil= (fedUserRawT*)data;
@@ -78,14 +66,14 @@ static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb
     assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
     assert(afb_data_type (socialD) == fedSocialObjType);
     json_object *socialJ;
-    const fedSocialRawT *social =  afb_data_ro_pointer(socialD);
+    const fedSocialRawT *fedSocial =  afb_data_ro_pointer(socialD);
 
     int err= wrap_json_pack (&socialJ, "{si si si ss ss}"
-        ,"id", social->id
-        ,"stamp", social->stamp
-        ,"loa", social->loa
-        ,"idp", social->idp
-        ,"social", social->fedkey
+        ,"id", fedSocial->id
+        ,"stamp", fedSocial->stamp
+        ,"loa", fedSocial->loa
+        ,"idp", fedSocial->idp
+        ,"social", fedSocial->fedkey
     );
     if (err) goto OnErrorExit;
 
@@ -94,14 +82,7 @@ static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb
     return 0;
 
 OnErrorExit:
-    return -1;    
-}
-
-static void socialFreeCB (void *data) {
-    socialObjHdlT *social= (socialObjHdlT*)data;
-
-    if (social->json) json_object_put((json_object*)social->json);
-    free (data);
+    return -1;
 }
 
 static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, afb_data_t *dest) {
@@ -110,43 +91,44 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // socialRaw depend on socialJson we have dest lock json object until raw object die.
-    socialObjHdlT *social= calloc (1, sizeof(socialObjHdlT));
-    social->json=afb_data_ro_pointer(jsonD);
-    json_object_get ((json_object*)social->json);
+    fedSocialRawT *fedSocial= calloc (1, sizeof(fedSocialRawT));
 
     //fedSocialRawT *social= calloc (1, sizeof(fedSocialRawT));
-    err= afb_create_data_raw (dest, socialT, &social->raw, sizeof(socialObjHdlT),socialFreeCB, social);
+    err= afb_create_data_raw (dest, fedSocialObjType, &fedSocial, sizeof(fedSocialRawT),(void*)fedSocial, fedSocialFreeCB);
+    if (err) goto OnErrorExit;
+
+    // link json object with raw dependency
+    err= afb_data_dependency_add (jsonD, *dest);
     if (err) goto OnErrorExit;
 
     err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{si si si ss ss}"
-        ,"id", &social->raw.id
-        ,"stamp", &social->raw.stamp
-        ,"loa", &social->raw.loa
-        ,"idp", &social->raw.idp
-        ,"fedkey", &social->raw.fedkey
+        ,"id", &fedSocial->id
+        ,"stamp", &fedSocial->stamp
+        ,"loa", &fedSocial->loa
+        ,"idp", &fedSocial->idp
+        ,"fedkey", &fedSocial->fedkey
     );
     if (err) goto OnErrorExit;
     return 0;
 
 OnErrorExit:
-    return -1;    
+    return -1;
 }
 
 static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_data_t *dest) {
     assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
     assert(afb_data_type (userD) == fedUserObjType);
     json_object *userJ;
-    const fedUserRawT *user =  afb_data_ro_pointer(userD);
+    const fedUserRawT *fedUser =  afb_data_ro_pointer(userD);
 
-    int err= wrap_json_pack (&userJ, "{si ss si si ss ss* ss* ss*}"
-        ,"id", user->id
-        ,"pseudo", user->pseudo
-        ,"loa", user->loa
-        ,"stamp", user->stamp
-        ,"email", user->email
-        ,"name", user->name
-        ,"avatar", user->avatar
-        ,"company", user->company
+    int err= wrap_json_pack (&userJ, "{si ss si ss ss* ss* ss*}"
+        ,"id", fedUser->id
+        ,"pseudo", fedUser->pseudo
+        ,"stamp", fedUser->stamp
+        ,"email", fedUser->email
+        ,"name", fedUser->name
+        ,"avatar", fedUser->avatar
+        ,"company", fedUser->company
     );
     if (err) goto OnErrorExit;
 
@@ -155,14 +137,7 @@ static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_dat
     return 0;
 
 OnErrorExit:
-    return -1;    
-}
-
-static void userFreeCB (void *data) {
-    userObjHdlT *user= (userObjHdlT*)data;
-
-    if (user->json) json_object_put((json_object*)user->json);
-    free (data);
+    return -1;
 }
 
 static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_data_t *dest) {
@@ -171,29 +146,27 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // userRaw depend on userJson we have dest lock json object until raw object die.
-    userObjHdlT *user= calloc (1, sizeof(userObjHdlT));
-    user->json=afb_data_ro_pointer(jsonD);
-    json_object_get ((json_object*)user->json);
-
-    //fedUserRawT *user= calloc (1, sizeof(fedUserRawT));
-    err= afb_create_data_raw (dest, userT, &user->raw, sizeof(userObjHdlT),userFreeCB, user);
+    fedUserRawT *fedUser= calloc (1, sizeof(fedUserRawT));
+    err= afb_create_data_raw (dest, fedUserObjType, fedUser, sizeof(fedUserRawT),(void*)fedUser, free);
     if (err) goto OnErrorExit;
 
-    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{si ss si si ss ss? ss? ss?}"
-        ,"id", &user->raw.id
-        ,"pseudo", &user->raw.pseudo
-        ,"loa", &user->raw.loa
-        ,"stamp", &user->raw.stamp
-        ,"email", &user->raw.email
-        ,"name", &user->raw.name
-        ,"avatar", &user->raw.avatar
-        ,"company", &user->raw.company
+    // link json object with raw dependency
+    err= afb_data_dependency_add (jsonD, *dest);
+    if (err) goto OnErrorExit;
+
+    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{s?i ss ss s?s s?s s?s}"
+        ,"id", &fedUser->id
+        ,"pseudo", &fedUser->pseudo
+        ,"email", &fedUser->email
+        ,"name", &fedUser->name
+        ,"avatar", &fedUser->avatar
+        ,"company", &fedUser->company
     );
     if (err) goto OnErrorExit;
     return 0;
 
 OnErrorExit:
-    return -1;    
+    return -1;
 }
 
 int fedUserObjTypesRegister () {
@@ -218,5 +191,5 @@ int fedUserObjTypesRegister () {
     return 0;
 
 OnErrorExit:
-    return 1;    
+    return 1;
 }

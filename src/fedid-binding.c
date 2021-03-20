@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <json-c/json.h>
 
 static void fedPing(afb_req_t request, unsigned nparams, afb_data_t const params[]) {
   static int count = 0;
@@ -45,17 +46,26 @@ static void fedPing(afb_req_t request, unsigned nparams, afb_data_t const params
 
 static void fedUserAttr(afb_req_x4_t request, unsigned nparams, afb_data_x4_t const params[]) {
     afb_data_t args[nparams];
-    const char *values[nparams];
     int err;
 
-    if (nparams != 2) goto OnErrorExit;
 
     // retreive feduser from API argv[0]
-    for (int idx=0; idx < 2; idx++) {
-        err = afb_data_convert(params[idx], AFB_PREDEFINED_TYPE_STRINGZ, &args[idx]);
-        values[idx]= afb_data_ro_pointer(args[idx]);
-        if (err < 0) goto OnErrorExit;
-    }
+    // const char *values[nparams];
+    // if (nparams != 2) goto OnErrorExit;
+    // for (int idx=0; idx < 2; idx++) {
+    //     err = afb_data_convert(params[idx], AFB_PREDEFINED_TYPE_STRINGZ, &args[idx]);
+    //     values[idx]= afb_data_ro_pointer(args[idx]);
+    //     if (err < 0) goto OnErrorExit;
+    // }
+
+    // Fulup TBD move from json to strings input
+
+    err = afb_data_convert(params[0], AFB_PREDEFINED_TYPE_JSON_C, &args[0]);
+    json_object *queryJ=  afb_data_ro_pointer(args[0]);
+    if (!json_object_is_type(queryJ, json_type_array)  || json_object_array_length(queryJ) != 2) goto OnErrorExit;
+    const char *values[2];
+    values[0]= json_object_get_string (json_object_array_get_idx(queryJ,0));
+    values[1]= json_object_get_string (json_object_array_get_idx(queryJ,1));
 
     err= sqlUserAttrCheck (request, values[0], values[1]);
     afb_req_reply(request, err, 0, NULL);

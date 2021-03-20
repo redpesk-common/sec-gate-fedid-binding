@@ -43,7 +43,6 @@ typedef enum {
 typedef struct {
     int ucount;
     long id; // unique main db id
-    long loa;
     long stamp;
     const char *pseudo;
     const char *name;
