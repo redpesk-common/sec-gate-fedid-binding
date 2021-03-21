@@ -38,8 +38,6 @@ typedef enum {
 
 } fedidStatusE;
 
-
-
 typedef struct {
     int ucount;
     long id; // unique main db id
@@ -49,6 +47,7 @@ typedef struct {
     const char *email;
     const char *avatar;
     const char *company;
+    const char **attrs;
 } fedUserRawT;
 
 typedef struct {
@@ -58,6 +57,7 @@ typedef struct {
     long stamp;
     const char *idp;
     const char *fedkey;
+    const char **attrs;
 } fedSocialRawT;
 
 int fedUserObjTypesRegister ();
