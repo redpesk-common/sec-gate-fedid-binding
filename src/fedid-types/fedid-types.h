@@ -53,7 +53,6 @@ typedef struct {
 typedef struct {
     int ucount;
     long id; // unique main db id
-    long loa;
     long stamp;
     const char *idp;
     const char *fedkey;

@@ -68,10 +68,9 @@ static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb
     json_object *socialJ;
     const fedSocialRawT *fedSocial =  afb_data_ro_pointer(socialD);
 
-    int err= wrap_json_pack (&socialJ, "{si si si ss ss}"
+    int err= wrap_json_pack (&socialJ, "{si si ss ss}"
         ,"id", fedSocial->id
         ,"stamp", fedSocial->stamp
-        ,"loa", fedSocial->loa
         ,"idp", fedSocial->idp
         ,"social", fedSocial->fedkey
     );
@@ -93,22 +92,25 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     // socialRaw depend on socialJson we have dest lock json object until raw object die.
     fedSocialRawT *fedSocial= calloc (1, sizeof(fedSocialRawT));
 
-    //fedSocialRawT *social= calloc (1, sizeof(fedSocialRawT));
     err= afb_create_data_raw (dest, fedSocialObjType, &fedSocial, sizeof(fedSocialRawT),(void*)fedSocial, fedSocialFreeCB);
     if (err) goto OnErrorExit;
 
-    // link json object with raw dependency
-    err= afb_data_dependency_add (jsonD, *dest);
-    if (err) goto OnErrorExit;
-
-    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{si si si ss ss}"
+    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{s?i s?i ss ss}"
         ,"id", &fedSocial->id
         ,"stamp", &fedSocial->stamp
-        ,"loa", &fedSocial->loa
-        ,"idp", &fedSocial->idp
         ,"fedkey", &fedSocial->fedkey
+        ,"idp", &fedSocial->idp
     );
     if (err) goto OnErrorExit;
+
+    // link json object with raw dependency
+    // err= afb_data_dependency_add (jsonD, *dest);
+    // if (err) goto OnErrorExit;
+
+    // Fulup TBD clean up strdup when Jose will have implemented new cookie
+    fedSocial->idp= strdup(fedSocial->idp);
+    fedSocial->fedkey= strdup(fedSocial->fedkey);
+
     return 0;
 
 OnErrorExit:
@@ -150,10 +152,6 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     err= afb_create_data_raw (dest, fedUserObjType, fedUser, sizeof(fedUserRawT),(void*)fedUser, free);
     if (err) goto OnErrorExit;
 
-    // link json object with raw dependency
-    err= afb_data_dependency_add (jsonD, *dest);
-    if (err) goto OnErrorExit;
-
     err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{s?i ss ss s?s s?s s?s}"
         ,"id", &fedUser->id
         ,"pseudo", &fedUser->pseudo
@@ -163,6 +161,18 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
         ,"company", &fedUser->company
     );
     if (err) goto OnErrorExit;
+
+    // link json object with raw dependency
+    // err= afb_data_dependency_add (jsonD, *dest);
+    // if (err) goto OnErrorExit;
+
+    // Fulup TDB change when Jose will have update cookie functions
+    fedUser->pseudo= strdup(fedUser->pseudo);
+    fedUser->email= strdup(fedUser->email);
+    if (fedUser->name) fedUser->name= strdup(fedUser->name);
+    if (fedUser->avatar) fedUser->avatar= strdup(fedUser->avatar);
+    if (fedUser->company) fedUser->company= strdup(fedUser->company);
+
     return 0;
 
 OnErrorExit:

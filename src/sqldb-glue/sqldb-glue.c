@@ -29,6 +29,7 @@
 
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
+#define MAX_QUERIES 3
 
 const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     "CREATE TABLE fed_users"
@@ -42,11 +43,11 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     " ,UNIQUE ('pseudo')"
     ");"
     "CREATE TABLE fed_keys"
-    "('idp_uid' text NOT NULL"
-    " ,'fed_key' text NOT NULL"
+    "('idp' text NOT NULL"
+    " ,'fedkey' text NOT NULL"
     " ,'tstamp' integer"
     " ,'userid' INT UNSIGNED NOT NULL REFERENCES fed_users('rowid')"
-    " ,UNIQUE ('idp_uid', 'fed_key'), unique('userid')"
+    " ,UNIQUE ('idp', 'fedkey'), unique('userid')"
     ");"
     "CREATE TABLE fed_label"
     "('label_uid' text NOT NULL"
@@ -126,33 +127,41 @@ OnErrorExit:
 }
 
 int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser) {
-    sqlite3_stmt *queryRqt=NULL;
-    int status;
+    sqlite3_stmt *queryRqt;
+
     static char queryPattern[]=
-        " insert into fed_keys (uip, fed_keys)"
-        " values(%s,%s,%ld);"
-        " insert into fed_users(id,pseudo,email,name,avatar,company,loa)"
-        " values(last_insert_rowid(), %s,%s,%s,%s,%s,%d,%ld);"
-        ";";
+        " insert into fed_users(pseudo,email,name,avatar,company, tstamp)"
+        " values('%s','%s','%s','%s','%s',%ld);"
+        " insert into fed_keys (userid, idp, fedkey, tstamp)"
+        " values(last_insert_rowid(),'%s','%s',%ld);"
+        "";
     int err;
     unsigned long timeStamp= (unsigned long)time(NULL);
     char *queryStr;
     int queryLen=asprintf (&queryStr, queryPattern
+        , fedUser->pseudo, fedUser->email, fedUser->name, fedUser->avatar, fedUser->company, timeStamp
         , fedSocial->idp, fedSocial->fedkey, timeStamp
-        , fedUser->pseudo, fedUser->email, fedUser->name, fedUser->avatar, fedUser->company, fedSocial->loa, timeStamp);
+    );
     if (queryLen<0) goto OnErrorExit;
 
-    // compile request into byte code
-    err= sqlite3_prepare_v3 (dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
-    if (err) goto OnErrorExit;
+    fprintf (stderr, "*** sqlRegisterFromSocial query=%s\n", queryStr);
 
-    // feduser
-    if (SQLITE_DONE != sqlite3_step(queryRqt)) status= FEDID_USER_UNKNOWN;
-    else status= FEDID_USER_EXIST;
+    // Loop on every query commands
+    for (const char *pzTail=queryStr; pzTail[0]; /* none */) {
+        err= sqlite3_prepare_v3 (dbFd, pzTail, queryLen, 0, &queryRqt, &pzTail);
+        if (err != SQLITE_OK) goto OnErrorExit;
 
-    sqlite3_finalize (queryRqt);
+        // handle space and comments
+        if( !queryRqt ) continue;
+
+        err= sqlite3_step(queryRqt);
+        if (err != SQLITE_DONE) goto OnErrorExit;
+
+        sqlite3_finalize (queryRqt);
+    }
     free (queryStr);
-    return status;
+
+    return 0;
 
 OnErrorExit:
     AFB_REQ_ERROR (request, "[sql_error] %s (sqlRegisterFromSocial)", sqlite3_errmsg(dbFd));
@@ -161,15 +170,15 @@ OnErrorExit:
 }
 
 
-int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_data_t *response) {
+int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_data_t reply[]) {
     sqlite3_stmt *queryRqt=NULL;
     static char queryPattern[]=
         " select usr.pseudo,usr.email,usr.name,usr.avatar,usr.company"
         " from fed_users usr, fed_keys keys"
         " where keys.userid=usr.rowid"
-        " and keys.idp_uid='%s' and keys.fed_key='%s'"
+        " and keys.idp='%s' and keys.fedkey='%s'"
         ";";
-    int err;
+    int err, count;
     char *queryStr;
     int queryLen=asprintf (&queryStr, queryPattern, fedSocial->idp, fedSocial->fedkey);
     if (queryLen<0) goto OnErrorExit;
@@ -184,13 +193,13 @@ int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_d
 
         case SQLITE_DONE:
         // user is unknown, registration requirer
-        *response=NULL;
+        count= 0; 
         break;
 
         case SQLITE_ROW:
         // user already exist retreive stored profil
         colCount=  sqlite3_column_count(queryRqt);
-        if (colCount != 6) goto OnErrorExit;
+        if (colCount != 5) goto OnErrorExit;
 
         // allocate sqlUser handle and push it as a raw data
         sqlRqtCtxT *rqtCtx= calloc (1,sizeof(sqlRqtCtxT));
@@ -202,7 +211,8 @@ int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_d
         rqtCtx->user.avatar= (char*)sqlite3_column_text(queryRqt,3);
         rqtCtx->user.company= (char*)sqlite3_column_text(queryRqt,4);
 
-        err= afb_create_data_raw(response, fedUserObjType, &rqtCtx->user, 0, sqlUserFreeCB, rqtCtx);
+        err= afb_create_data_raw(&reply[0], fedUserObjType, &rqtCtx->user, 0, sqlUserFreeCB, rqtCtx);
+        count= 1; // on response
         break;
 
         default:
@@ -210,7 +220,7 @@ int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_d
     }
     sqlite3_finalize (queryRqt);
     free (queryStr);
-    return 0;
+    return count;
 
 OnErrorExit:
     AFB_REQ_ERROR (request, "[sql_error] %s (sqlQueryFromSocial)", sqlite3_errmsg(dbFd));
