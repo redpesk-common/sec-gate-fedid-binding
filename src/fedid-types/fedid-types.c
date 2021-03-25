@@ -40,9 +40,6 @@ struct afb_type_x4 *fedSocialObjType=NULL;
 
 void fedUserFreeCB (void *data) {
     fedUserRawT *userProfil= (fedUserRawT*)data;
-    if (!userProfil) return;
-    if (userProfil->ucount-- > 0) return;
-
     if (userProfil->pseudo) free ((void*)userProfil->pseudo);
     if (userProfil->email) free ((void*)userProfil->email);
     if (userProfil->name) free ((void*)userProfil->name);
@@ -53,14 +50,10 @@ void fedUserFreeCB (void *data) {
 
 void fedSocialFreeCB (void*ctx) {
 	fedSocialRawT *fedSocial= (fedSocialRawT*)ctx;
-    if (!fedSocial) return;
-    if (fedSocial->ucount-- > 0) return;
-
 	if (fedSocial->idp) free ((void*)  fedSocial->idp);
 	if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
 	free (fedSocial);
 }
-
 
 static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb_data_t *dest) {
     assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);

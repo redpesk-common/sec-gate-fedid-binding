@@ -152,12 +152,17 @@ static int fedCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *
     switch (ctlid) {
     case afb_ctlid_Root_Entry:
         AFB_NOTICE("unexpected root entry");
-        break;
+        break; 
+
 
     case afb_ctlid_Pre_Init:
         afb_api_provide_class(api, "identity");
 
-        err = sqlCreate(FEDID_SQLLITE_PATH, &response);
+        json_object *configJ = ctlarg->pre_init.config;
+        const char *dbpath= FEDID_SQLLITE_PATH;
+        if (configJ) wrap_json_unpack (configJ, "{ss}", "dbpath", &dbpath);
+
+        err = sqlCreate(dbpath, &response);
         if (err) {
             AFB_ERROR("[sql-backend fail] Fail to create/connect on sqlbackend");
             goto OnErrorExit;
