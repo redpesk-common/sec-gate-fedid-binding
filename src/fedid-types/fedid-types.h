@@ -39,7 +39,7 @@ typedef enum {
 } fedidStatusE;
 
 typedef struct {
-    long id; // unique main db id
+    int slave;
     long stamp;
     const char *pseudo;
     const char *name;
@@ -50,7 +50,7 @@ typedef struct {
 } fedUserRawT;
 
 typedef struct {
-    long id; // unique main db id
+    int slave;
     long stamp;
     const char *idp;
     const char *fedkey;

@@ -39,33 +39,35 @@ struct afb_type_x4 *fedUserObjType=NULL;
 struct afb_type_x4 *fedSocialObjType=NULL;
 
 void fedUserFreeCB (void *data) {
-    fedUserRawT *userProfil= (fedUserRawT*)data;
-    if (userProfil->pseudo) free ((void*)userProfil->pseudo);
-    if (userProfil->email) free ((void*)userProfil->email);
-    if (userProfil->name) free ((void*)userProfil->name);
-    if (userProfil->avatar) free ((void*)userProfil->avatar);
-    if (userProfil->company) free ((void*)userProfil->company);
-    free (userProfil);
+    fedUserRawT *fedUser= (fedUserRawT*)data;
+    if (!fedUser->slave) {
+        if (fedUser->pseudo) free ((void*)fedUser->pseudo);
+        if (fedUser->email) free ((void*)fedUser->email);
+        if (fedUser->name) free ((void*)fedUser->name);
+        if (fedUser->avatar) free ((void*)fedUser->avatar);
+        if (fedUser->company) free ((void*)fedUser->company);
+    }
+    free (fedUser);
 }
 
 void fedSocialFreeCB (void*ctx) {
 	fedSocialRawT *fedSocial= (fedSocialRawT*)ctx;
-	if (fedSocial->idp) free ((void*)  fedSocial->idp);
-	if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
+    if (!fedSocial->slave) {
+    	if (fedSocial->idp) free ((void*)  fedSocial->idp);
+	    if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
+    }
 	free (fedSocial);
 }
 
 static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb_data_t *dest) {
-    assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
     assert(afb_data_type (socialD) == fedSocialObjType);
     json_object *socialJ;
     const fedSocialRawT *fedSocial =  afb_data_ro_pointer(socialD);
 
-    int err= wrap_json_pack (&socialJ, "{si si ss ss}"
-        ,"id", fedSocial->id
-        ,"stamp", fedSocial->stamp
+    int err= wrap_json_pack (&socialJ, "{ss ss si*}"
         ,"idp", fedSocial->idp
-        ,"social", fedSocial->fedkey
+        ,"fedkey", fedSocial->fedkey
+        ,"stamp", fedSocial->stamp
     );
     if (err) goto OnErrorExit;
 
@@ -78,31 +80,26 @@ OnErrorExit:
 }
 
 static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, afb_data_t *dest) {
+    assert(afb_data_type(socialT) == fedSocialObjType);
     int err;
-    assert(fedSocialObjType == socialT);
-    assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // socialRaw depend on socialJson we have dest lock json object until raw object die.
     fedSocialRawT *fedSocial= calloc (1, sizeof(fedSocialRawT));
 
-    err= afb_create_data_raw (dest, fedSocialObjType, &fedSocial, sizeof(fedSocialRawT),(void*)fedSocial, fedSocialFreeCB);
+    // link json object with raw dependency
+    err= afb_data_dependency_add (jsonD, *dest);
     if (err) goto OnErrorExit;
+    fedSocial->slave=1;
 
-    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{s?i s?i ss ss}"
-        ,"id", &fedSocial->id
-        ,"stamp", &fedSocial->stamp
+    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?i}"
         ,"fedkey", &fedSocial->fedkey
         ,"idp", &fedSocial->idp
+        ,"stamp", &fedSocial->stamp
     );
     if (err) goto OnErrorExit;
 
-    // link json object with raw dependency
-    // err= afb_data_dependency_add (jsonD, *dest);
-    // if (err) goto OnErrorExit;
-
-    // Fulup TBD clean up strdup when Jose will have implemented new cookie
-    fedSocial->idp= strdup(fedSocial->idp);
-    fedSocial->fedkey= strdup(fedSocial->fedkey);
+    err= afb_create_data_raw (dest, fedSocialObjType, &fedSocial, 0, fedSocialFreeCB, fedSocial);
+    if (err) goto OnErrorExit;
 
     return 0;
 
@@ -111,19 +108,17 @@ OnErrorExit:
 }
 
 static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_data_t *dest) {
-    assert(jsonT == AFB_PREDEFINED_TYPE_JSON_C);
     assert(afb_data_type (userD) == fedUserObjType);
     json_object *userJ;
     const fedUserRawT *fedUser =  afb_data_ro_pointer(userD);
 
-    int err= wrap_json_pack (&userJ, "{si ss si ss ss* ss* ss*}"
-        ,"id", fedUser->id
+    int err= wrap_json_pack (&userJ, "{ss ss ss* ss* ss* si*}"
         ,"pseudo", fedUser->pseudo
-        ,"stamp", fedUser->stamp
         ,"email", fedUser->email
         ,"name", fedUser->name
         ,"avatar", fedUser->avatar
         ,"company", fedUser->company
+        ,"stamp", fedUser->stamp
     );
     if (err) goto OnErrorExit;
 
@@ -136,17 +131,18 @@ OnErrorExit:
 }
 
 static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_data_t *dest) {
+    assert(afb_data_type(userT) == fedUserObjType);
     int err;
-    assert(fedUserObjType == userT);
-    assert(AFB_PREDEFINED_TYPE_JSON_C == afb_data_type (jsonD));
 
     // userRaw depend on userJson we have dest lock json object until raw object die.
     fedUserRawT *fedUser= calloc (1, sizeof(fedUserRawT));
-    err= afb_create_data_raw (dest, fedUserObjType, fedUser, sizeof(fedUserRawT),(void*)fedUser, free);
+
+    // link json object with raw dependency
+    err= afb_data_dependency_add (jsonD, *dest);
+    fedUser->slave=1;
     if (err) goto OnErrorExit;
 
-    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{s?i ss ss s?s s?s s?s}"
-        ,"id", &fedUser->id
+    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?s s?s s?s}"
         ,"pseudo", &fedUser->pseudo
         ,"email", &fedUser->email
         ,"name", &fedUser->name
@@ -155,16 +151,8 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     );
     if (err) goto OnErrorExit;
 
-    // link json object with raw dependency
-    // err= afb_data_dependency_add (jsonD, *dest);
-    // if (err) goto OnErrorExit;
-
-    // Fulup TDB change when Jose will have update cookie functions
-    fedUser->pseudo= strdup(fedUser->pseudo);
-    fedUser->email= strdup(fedUser->email);
-    if (fedUser->name) fedUser->name= strdup(fedUser->name);
-    if (fedUser->avatar) fedUser->avatar= strdup(fedUser->avatar);
-    if (fedUser->company) fedUser->company= strdup(fedUser->company);
+    err= afb_create_data_raw (dest, fedUserObjType, fedUser, 0, fedUserFreeCB, fedUser);
+    if (err) goto OnErrorExit;
 
     return 0;
 
