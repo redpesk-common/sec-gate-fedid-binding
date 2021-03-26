@@ -22,10 +22,10 @@
 */
 #pragma once
 
-#include "fedid-types.h"
-
 #define AFB_BINDING_VERSION 4
 #include <afb/afb-binding.h>
+
+#include "fedid-types.h"
 
 typedef int (*sqlQueryCbT)(void*,int,char**,char**);
 int sqlCreate(const char *dbpath, char **response);

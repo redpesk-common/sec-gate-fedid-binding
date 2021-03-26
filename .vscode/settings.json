@@ -10,6 +10,13 @@
         "seccomp"
     ],
     "files.associations": {
-        "afb-binding.h": "c"
+        "afb-binding.h": "c",
+        "fedid-types.h": "c",
+        "afb-binding-v3.h": "c",
+        "afb-binding-v4.h": "c",
+        "afb-binding-x4.h": "c",
+        "afb-binding-x4-itf.h": "c",
+        "afb-errno.h": "c",
+        "sqldb-glue.h": "c"
     }
 }

@@ -58,8 +58,8 @@ typedef struct {
 } fedSocialRawT;
 
 int fedUserObjTypesRegister ();
-extern struct afb_type_x4 *fedUserObjType;
-extern struct afb_type_x4 *fedSocialObjType;
+extern afb_type_t fedUserObjType;
+extern afb_type_t fedSocialObjType;
 
 void fedUserFreeCB (void *fedUserRawT);
 void fedSocialFreeCB (void *fedSocialRawT);
