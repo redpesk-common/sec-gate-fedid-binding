@@ -47,6 +47,7 @@ void fedUserFreeCB (void *data) {
         if (fedUser->avatar) free ((void*)fedUser->avatar);
         if (fedUser->company) free ((void*)fedUser->company);
     }
+    fedUser->slave=1; // help debug
     free (fedUser);
 }
 
@@ -56,11 +57,11 @@ void fedSocialFreeCB (void*ctx) {
     	if (fedSocial->idp) free ((void*)  fedSocial->idp);
 	    if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
     }
+    fedSocial->slave=-1; // help debug
 	free (fedSocial);
 }
 
 static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb_data_t *dest) {
-    assert(afb_data_type (socialD) == fedSocialObjType);
     json_object *socialJ;
     const fedSocialRawT *fedSocial =  afb_data_ro_pointer(socialD);
 
@@ -80,16 +81,10 @@ OnErrorExit:
 }
 
 static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, afb_data_t *dest) {
-    assert(afb_data_type(socialT) == fedSocialObjType);
     int err;
 
     // socialRaw depend on socialJson we have dest lock json object until raw object die.
     fedSocialRawT *fedSocial= calloc (1, sizeof(fedSocialRawT));
-
-    // link json object with raw dependency
-    err= afb_data_dependency_add (jsonD, *dest);
-    if (err) goto OnErrorExit;
-    fedSocial->slave=1;
 
     err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?i}"
         ,"fedkey", &fedSocial->fedkey
@@ -101,6 +96,11 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     err= afb_create_data_raw (dest, fedSocialObjType, &fedSocial, 0, fedSocialFreeCB, fedSocial);
     if (err) goto OnErrorExit;
 
+    // link json object with raw dependency
+    err= afb_data_dependency_add (jsonD, *dest);
+    if (err) goto OnErrorExit;
+    fedSocial->slave=1;
+
     return 0;
 
 OnErrorExit:
@@ -108,7 +108,6 @@ OnErrorExit:
 }
 
 static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_data_t *dest) {
-    assert(afb_data_type (userD) == fedUserObjType);
     json_object *userJ;
     const fedUserRawT *fedUser =  afb_data_ro_pointer(userD);
 
@@ -131,16 +130,10 @@ OnErrorExit:
 }
 
 static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_data_t *dest) {
-    assert(afb_data_type(userT) == fedUserObjType);
     int err;
 
     // userRaw depend on userJson we have dest lock json object until raw object die.
     fedUserRawT *fedUser= calloc (1, sizeof(fedUserRawT));
-
-    // link json object with raw dependency
-    err= afb_data_dependency_add (jsonD, *dest);
-    fedUser->slave=1;
-    if (err) goto OnErrorExit;
 
     err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?s s?s s?s}"
         ,"pseudo", &fedUser->pseudo
@@ -152,6 +145,11 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     if (err) goto OnErrorExit;
 
     err= afb_create_data_raw (dest, fedUserObjType, fedUser, 0, fedUserFreeCB, fedUser);
+    if (err) goto OnErrorExit;
+
+    // link json object with raw dependency
+    err= afb_data_dependency_add (jsonD, *dest);
+    fedUser->slave=1;
     if (err) goto OnErrorExit;
 
     return 0;

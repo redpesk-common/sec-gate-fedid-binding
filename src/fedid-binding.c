@@ -32,7 +32,7 @@
 #include <wrap-json.h>
 
 
-static void fedPing(afb_req_t request, unsigned args, afb_data_t const argv[]) {
+static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
   static int count = 0;
   char *response;
   afb_data_t reply[1];
@@ -47,18 +47,18 @@ static void fedPing(afb_req_t request, unsigned args, afb_data_t const argv[]) {
 }
 
 // Link in new social id with an existing profil id
-static void fedSocialLink(afb_req_t request, unsigned args, afb_data_t const argv[]) {
+static void fedSocialLink(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
     // Fulup To be written
     return;
 }
 
-static void fedUserAttr(afb_req_x4_t request, unsigned args, afb_data_x4_t const argv[]) {
-    afb_data_t argd[args];
+static void fedUserAttr(afb_req_x4_t request, unsigned argc, afb_data_x4_t const argv[]) {
+    afb_data_t argd[argc];
     const char *label, *value;
     int err;
 
     const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, NULL};
-    err= afb_data_array_convert (args, argv, argt, argd);
+    err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) {
         argd[0]=NULL;
         goto OnErrorExit;
@@ -75,24 +75,24 @@ static void fedUserAttr(afb_req_x4_t request, unsigned args, afb_data_x4_t const
     if (err < 0) goto OnErrorExit;
 
     afb_req_reply(request, err, 0, NULL);
-    afb_data_array_unref(args, argd);
+    afb_data_array_unref(argc, argd);
     return;
 
 OnErrorExit:
-    afb_req_reply(request, FEDID_ERROR, 0, NULL);  
-    if (argd[0]) afb_data_array_unref(args, argd);
+    afb_req_reply(request, FEDID_ERROR, 0, NULL);
+    if (argd[0]) afb_data_array_unref(argc, argd);
 }
 
 // Create a new user profil and link it to its social id
-static void fedUserRegister(afb_req_t request, unsigned args, afb_data_t const argv[]) {
-    afb_data_t argd[args];
+static void fedUserRegister(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+    afb_data_t argd[argc];
     int err;
 
     // make sure we get right input parameters types
-    if (args != 2) goto OnErrorExit;
+    if (argc != 2) goto OnErrorExit;
 
     const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, NULL};
-    err= afb_data_array_convert (args, argv, argt, argd);
+    err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) {
         argd[0]=NULL;
         goto OnErrorExit;
@@ -106,25 +106,25 @@ static void fedUserRegister(afb_req_t request, unsigned args, afb_data_t const a
     if (err < 0) goto OnErrorExit;
 
     afb_req_reply(request, err, 0, NULL);
-    afb_data_array_unref(args, argd);
+    afb_data_array_unref(argc, argd);
     return;
 
 OnErrorExit:
-    afb_req_reply(request, -1, 0, NULL);  
-    if (argd[0]) afb_data_array_unref(args, argd);
+    afb_req_reply(request, -1, 0, NULL);
+    if (argd[0]) afb_data_array_unref(argc, argd);
 }
 
 // check if social id is already present within federation table
-static void fedSocialCheck(afb_req_t request, unsigned args, afb_data_t const argv[]) {
+static void fedSocialCheck(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
     char *errorMsg= "[fed-social-check] fail to retreive fedUser from argv[0]";
     int err;
     afb_data_t reply[1];
-    afb_data_t argd[args];
+    afb_data_t argd[argc];
 
-    if (args != 1) goto OnErrorExit;
+    if (argc != 1) goto OnErrorExit;
 
     const afb_type_t argt[]= {fedSocialObjType, NULL};
-    err= afb_data_array_convert (args, argv, argt, argd);
+    err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) {
         argd[0]=NULL;
         goto OnErrorExit;
@@ -134,15 +134,15 @@ static void fedSocialCheck(afb_req_t request, unsigned args, afb_data_t const ar
     const fedSocialRawT *fedSocial= afb_data_ro_pointer(argv[0]);
     int count= sqlQueryFromSocial (request, fedSocial, reply);
     if (count < 0) goto OnErrorExit;
-    
+
     afb_req_reply(request, 0, count, reply);
-    afb_data_array_unref(args, argd);
+    afb_data_array_unref(argc, argd);
     return;
 
 OnErrorExit:
     afb_create_data_raw(&reply[0], AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, NULL, NULL);
     afb_req_reply(request, FEDID_ERROR, 1, reply);
-    if (argd[0]) afb_data_array_unref(args, argd);
+    if (argd[0]) afb_data_array_unref(argc, argd);
 }
 
 static int fedCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdata) {
@@ -152,7 +152,7 @@ static int fedCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *
     switch (ctlid) {
     case afb_ctlid_Root_Entry:
         AFB_NOTICE("unexpected root entry");
-        break; 
+        break;
 
 
     case afb_ctlid_Pre_Init:
