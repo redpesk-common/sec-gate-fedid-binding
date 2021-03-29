@@ -32,3 +32,4 @@ int sqlCreate(const char *dbpath, char **response);
 int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_data_t *response);
 int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser);
 int sqlUserAttrCheck (afb_req_t request, const char* attrLabel, const char *attrValue);
+int sqlUserLinkIdps (afb_req_t request, const char* pseudo, const char* email, afb_data_t reply[]);

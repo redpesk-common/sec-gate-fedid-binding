@@ -22,8 +22,11 @@
 */
 #pragma once
 
-#define USER_PROFIL_TYPE "user-profil"
-#define SOCIAL_PROFIL_TYPE "social-profil"
+#define FEDUSER_PROFIL_TYPE "feduser-profil"
+#define FEDSOCIAL_PROFIL_TYPE "fedsocial-profil"
+#define FEDUSER_IDPS_LIST "feduser-idps"
+#define FEDID_IDPS_MAX 10
+
 
 typedef enum {
     FEDID_ERROR= -100,
@@ -60,6 +63,8 @@ typedef struct {
 int fedUserObjTypesRegister ();
 extern afb_type_t fedUserObjType;
 extern afb_type_t fedSocialObjType;
+extern afb_type_t fedUserIdpsObjType;
 
 void fedUserFreeCB (void *fedUserRawT);
 void fedSocialFreeCB (void *fedSocialRawT);
+void fedIdpsFreeCB (void *idpList);

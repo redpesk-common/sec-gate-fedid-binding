@@ -37,6 +37,16 @@
 
 struct afb_type_x4 *fedUserObjType=NULL;
 struct afb_type_x4 *fedSocialObjType=NULL;
+struct afb_type_x4 *fedUserIdpsObjType=NULL;
+
+void fedIdpsFreeCB (void *data) {
+    char **idps= (char**)data;
+
+    for (int idx=0; idps[idx]; idx++) {
+        free (idps[idx]);
+    }
+    free (idps);
+}
 
 void fedUserFreeCB (void *data) {
     fedUserRawT *fedUser= (fedUserRawT*)data;
@@ -166,15 +176,18 @@ int fedUserObjTypesRegister () {
     // type should be loaded only once per binder
     if (initialized) return 0;
 
-    err= afb_type_register(&fedSocialObjType, SOCIAL_PROFIL_TYPE, 0 /* not opac */);
+    err= afb_type_register(&fedSocialObjType, FEDSOCIAL_PROFIL_TYPE, 0 /* not opac */);
     if (err) goto OnErrorExit;
     afb_type_add_convert_to (fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialToJsonCB, context);
     afb_type_add_convert_from (fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialFromJsonCB, context);
 
-    err= afb_type_register(&fedUserObjType, USER_PROFIL_TYPE, 0 /* not opac */);
+    err= afb_type_register(&fedUserObjType, FEDUSER_PROFIL_TYPE, 0 /* not opac */);
     if (err) goto OnErrorExit;
     afb_type_add_convert_to (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userToJsonCB, context);
     afb_type_add_convert_from (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userFromJsonCB, context);
+
+    err= afb_type_register(&fedUserIdpsObjType, FEDUSER_IDPS_LIST, 0 /* not opac */);
+    if (err) goto OnErrorExit;
 
     initialized=1;
     return 0;

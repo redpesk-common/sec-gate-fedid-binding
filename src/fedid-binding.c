@@ -48,8 +48,35 @@ static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
 
 // Link in new social id with an existing profil id
 static void fedSocialLink(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
-    // Fulup To be written
+    afb_data_t argd[argc];
+    const char *email, *pseudo;
+    afb_data_t reply[1];
+    int err;
+
+    const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, NULL};
+    err= afb_data_array_convert (argc, argv, argt, argd);
+    if (err < 0) {
+        argd[0]=NULL;
+        goto OnErrorExit;
+    };
+
+    json_object *queryJ=  afb_data_ro_pointer(argd[0]);
+    err= wrap_json_unpack (queryJ, "{s?s s?s}"
+        ,"email", &email
+        ,"pseudo", &pseudo
+    );
+    if (err < 0) goto OnErrorExit;
+
+    err= sqlUserLinkIdps (request, email, pseudo, reply);
+    if (err < 0) goto OnErrorExit;
+
+    afb_req_reply(request, err, 1, reply);
+    afb_data_array_unref(argc, argd);
     return;
+
+OnErrorExit:
+    afb_req_reply(request, FEDID_ERROR, 0, NULL);
+    if (argd[0]) afb_data_array_unref(argc, argd);
 }
 
 static void fedUserAttr(afb_req_x4_t request, unsigned argc, afb_data_x4_t const argv[]) {

@@ -26,6 +26,7 @@
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
@@ -57,7 +58,6 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     " ,'epoc_stop'   integer"
     " ,'count_max'   integer"
     " ,'count_used'  integer"
-    " ,'values'   blob"
     " ,UNIQUE ('label_uid')"
     ");"
     "CREATE TABLE fed_user_label"
@@ -79,13 +79,13 @@ long sqlLastRow (void) {
 typedef struct {
    sqlite3_stmt *rqt;
    fedUserRawT user;
-} sqlRqtCtxT;
+} sqlsqlCtxT;
 
 static void sqlUserFreeCB (void *data) {
-    sqlRqtCtxT *rqtCtx= (sqlRqtCtxT*)data;
+    sqlsqlCtxT *sqlCtx= (sqlsqlCtxT*)data;
 
-    sqlite3_finalize (rqtCtx->rqt);
-    free (rqtCtx);
+    sqlite3_finalize (sqlCtx->rqt);
+    free (sqlCtx);
 }
 
 int sqlUserAttrCheck (afb_req_t request, const char* attrLabel, const char *attrValue) {
@@ -193,7 +193,7 @@ int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_d
 
         case SQLITE_DONE:
         // user is unknown, registration requirer
-        count= 0; 
+        count= 0;
         break;
 
         case SQLITE_ROW:
@@ -202,24 +202,28 @@ int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_d
         if (colCount != 5) goto OnErrorExit;
 
         // allocate sqlUser handle and push it as a raw data
-        sqlRqtCtxT *rqtCtx= calloc (1,sizeof(sqlRqtCtxT));
-        rqtCtx->rqt= queryRqt;
+        sqlsqlCtxT *sqlCtx= calloc (1,sizeof(sqlsqlCtxT));
+        sqlCtx->rqt= queryRqt;
 
-        rqtCtx->user.pseudo= (char*)sqlite3_column_text(queryRqt,0);
-        rqtCtx->user.email= (char*)sqlite3_column_text(queryRqt,1);
-        rqtCtx->user.name= (char*)sqlite3_column_text(queryRqt,2);
-        rqtCtx->user.avatar= (char*)sqlite3_column_text(queryRqt,3);
-        rqtCtx->user.company= (char*)sqlite3_column_text(queryRqt,4);
+        sqlCtx->user.pseudo= (char*)sqlite3_column_text(queryRqt,0);
+        sqlCtx->user.email= (char*)sqlite3_column_text(queryRqt,1);
+        sqlCtx->user.name= (char*)sqlite3_column_text(queryRqt,2);
+        sqlCtx->user.avatar= (char*)sqlite3_column_text(queryRqt,3);
+        sqlCtx->user.company= (char*)sqlite3_column_text(queryRqt,4);
 
-        err= afb_create_data_raw(&reply[0], fedUserObjType, &rqtCtx->user, 0, sqlUserFreeCB, rqtCtx);
+        err= afb_create_data_raw(&reply[0], fedUserObjType, &sqlCtx->user, 0, sqlUserFreeCB, sqlCtx);
+        if (err) goto OnErrorExit;
+
         count= 1; // on response
         break;
 
         default:
             goto OnErrorExit;
     }
-    sqlite3_finalize (queryRqt);
-    free (queryStr);
+    if (!count) {
+        sqlite3_finalize (queryRqt);
+        free (queryStr);
+    }
     return count;
 
 OnErrorExit:
@@ -227,6 +231,50 @@ OnErrorExit:
     sqlite3_finalize (queryRqt);
     return -1;
 }
+
+// retreive IDP list from a feduser email or pseudo
+int sqlUserLinkIdps (afb_req_t request, const char* pseudo, const char* email, afb_data_t reply[]) {
+    sqlite3_stmt *queryRqt=NULL;
+    static char queryPattern[]=
+        " select keys.idp from fed_keys keys where keys.userid = "
+        " (select id from fed_users usr where usr.pseudo='%s' or usr.email='%s')"
+        ";";
+    int err, status, count=0;
+    char *queryStr;
+    char **idps= malloc(FEDID_IDPS_MAX * sizeof(char*));
+
+    int queryLen=asprintf (&queryStr, queryPattern, pseudo, email);
+    if (queryLen<0) goto OnErrorExit;
+
+    // compile request into byte code
+    err= sqlite3_prepare_v3 (dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
+    if (err) goto OnErrorExit;
+
+    // select should return one or no row
+    for (status=sqlite3_step(queryRqt); status != SQLITE_DONE; status=sqlite3_step(queryRqt)) {
+
+        if (status != SQLITE_ROW)   goto OnErrorExit;
+        idps [count++]= strdup ((char*)sqlite3_column_text(queryRqt,0));
+    }
+    free (queryStr);
+    sqlite3_finalize (queryRqt);
+
+    // let build idplist data.
+    if (count) {
+        idps [count]=NULL;
+        err= afb_create_data_raw(&reply[0], fedUserObjType, &idps, 0, fedIdpsFreeCB, idps);
+        if (err) goto OnErrorExit;
+
+    }
+
+    return count;
+
+OnErrorExit:
+    AFB_REQ_ERROR (request, "[sql_error] %s (sqlUserLinkIdps)", sqlite3_errmsg(dbFd));
+    sqlite3_finalize (queryRqt);
+    return -1;
+}
+
 
 int sqlCreate(const char *dbpath, char **errorMsg) {
   int rc;
