@@ -57,7 +57,7 @@ void fedUserFreeCB (void *data) {
         if (fedUser->avatar) free ((void*)fedUser->avatar);
         if (fedUser->company) free ((void*)fedUser->company);
     }
-    fedUser->slave=1; // help debug
+    fedUser->slave=-1; // help debug
     free (fedUser);
 }
 
@@ -121,7 +121,7 @@ static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_dat
     json_object *userJ;
     const fedUserRawT *fedUser =  afb_data_ro_pointer(userD);
 
-    int err= wrap_json_pack (&userJ, "{ss ss ss* ss* ss* si*}"
+    int err= wrap_json_pack (&userJ, "{ss ss* ss* ss* ss* si}"
         ,"pseudo", fedUser->pseudo
         ,"email", fedUser->email
         ,"name", fedUser->name
