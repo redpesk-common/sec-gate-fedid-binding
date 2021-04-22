@@ -92,7 +92,7 @@ int sqlUserAttrCheck (afb_req_t request, const char* attrLabel, const char *attr
     sqlite3_stmt *queryRqt=NULL;
     static char queryPattern[]=
         " select rowid from fed_users"
-        " where '%s'='%s'"
+        " where %s='%s'"
         ";";
     int err, status;
     char *queryStr;
