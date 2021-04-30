@@ -127,7 +127,7 @@ OnErrorExit:
 }
 
 int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser) {
-    sqlite3_stmt *queryRqt;
+    sqlite3_stmt *queryRqt=NULL;
 
     static char queryPattern[]=
         " insert into fed_users(pseudo,email,name,avatar,company, tstamp)"
@@ -168,7 +168,7 @@ OnErrorExit:
 }
 
 int sqlFederateFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser) {
-    sqlite3_stmt *queryRqt;
+    sqlite3_stmt *queryRqt=NULL;;
 
     static char queryPattern[]=
         " insert into fed_keys (userid, idp, fedkey, tstamp)"
