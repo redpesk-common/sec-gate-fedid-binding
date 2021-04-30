@@ -27,6 +27,7 @@
 #define FEDUSER_IDPS_LIST "feduser-idps"
 #define FEDID_IDPS_MAX 10
 
+#define FEDID_TRAILLER (void*)-1
 
 typedef enum {
     FEDID_ERROR= -100,

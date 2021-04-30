@@ -48,7 +48,7 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     " ,'fedkey' text NOT NULL"
     " ,'tstamp' integer"
     " ,'userid' INT UNSIGNED NOT NULL REFERENCES fed_users('rowid')"
-    " ,UNIQUE ('idp', 'fedkey'), unique('userid')"
+    " ,UNIQUE ('idp', 'fedkey')"
     ");"
     "CREATE TABLE fed_label"
     "('label_uid' text NOT NULL"
@@ -144,8 +144,6 @@ int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fe
     );
     if (queryLen<0) goto OnErrorExit;
 
-    fprintf (stderr, "*** sqlRegisterFromSocial query=%s\n", queryStr);
-
     // Loop on every query commands
     for (const char *pzTail=queryStr; pzTail[0]; /* none */) {
         err= sqlite3_prepare_v3 (dbFd, pzTail, queryLen, 0, &queryRqt, &pzTail);
@@ -169,6 +167,42 @@ OnErrorExit:
     return -1;
 }
 
+int sqlFederateFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser) {
+    sqlite3_stmt *queryRqt;
+
+    static char queryPattern[]=
+        " insert into fed_keys (userid, idp, fedkey, tstamp)"
+        " values((select rowid from fed_users where email='%s' and pseudo='%s'),'%s','%s',%ld);"
+        "";
+    int err;
+    unsigned long timeStamp= (unsigned long)time(NULL);
+    char *queryStr;
+    int queryLen=asprintf (&queryStr, queryPattern, fedUser->email, fedUser->pseudo, fedSocial->idp, fedSocial->fedkey, timeStamp
+    );
+    if (queryLen<0) goto OnErrorExit;
+
+    // Loop on every query commands
+    for (const char *pzTail=queryStr; pzTail[0]; /* none */) {
+        err= sqlite3_prepare_v3 (dbFd, pzTail, queryLen, 0, &queryRqt, &pzTail);
+        if (err != SQLITE_OK) goto OnErrorExit;
+
+        // handle space and comments
+        if( !queryRqt ) continue;
+
+        err= sqlite3_step(queryRqt);
+        if (err != SQLITE_DONE) goto OnErrorExit;
+
+        sqlite3_finalize (queryRqt);
+    }
+    free (queryStr);
+
+    return 0;
+
+OnErrorExit:
+    AFB_REQ_ERROR (request, "[sql_error] %s query=%s (sqlFederateFromSocial)", sqlite3_errmsg(dbFd), queryStr);
+    sqlite3_finalize (queryRqt);
+    return -1;
+}
 
 int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_data_t reply[]) {
     sqlite3_stmt *queryRqt=NULL;
@@ -237,7 +271,7 @@ int sqlUserLinkIdps (afb_req_t request, const char* pseudo, const char* email, a
     sqlite3_stmt *queryRqt=NULL;
     static char queryPattern[]=
         " select keys.idp from fed_keys keys where keys.userid = "
-        " (select id from fed_users usr where usr.pseudo='%s' or usr.email='%s')"
+        " (select rowid from fed_users usr where usr.pseudo='%s' or usr.email='%s')"
         ";";
     int err, status, count=0;
     char *queryStr;
@@ -262,11 +296,10 @@ int sqlUserLinkIdps (afb_req_t request, const char* pseudo, const char* email, a
     // let build idplist data.
     if (count) {
         idps [count]=NULL;
-        err= afb_create_data_raw(&reply[0], fedUserObjType, &idps, 0, fedIdpsFreeCB, idps);
+        fprintf (stderr, "**** idps=0x%p  value=%s\n", idps, idps[0]);
+        err= afb_create_data_raw(&reply[0], fedUserIdpsObjType, idps, 0, fedIdpsFreeCB, idps);
         if (err) goto OnErrorExit;
-
     }
-
     return count;
 
 OnErrorExit:

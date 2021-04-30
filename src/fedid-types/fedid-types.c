@@ -107,7 +107,7 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     if (err) goto OnErrorExit;
 
     // link json object with raw dependency
-    err= afb_data_dependency_add (jsonD, *dest);
+    err= afb_data_dependency_add (*dest, jsonD);
     if (err) goto OnErrorExit;
     fedSocial->slave=1;
 
@@ -158,7 +158,7 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     if (err) goto OnErrorExit;
 
     // link json object with raw dependency
-    err= afb_data_dependency_add (jsonD, *dest);
+    err= afb_data_dependency_add (*dest, jsonD);
     fedUser->slave=1;
     if (err) goto OnErrorExit;
 
