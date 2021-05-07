@@ -47,7 +47,7 @@ static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
 }
 
 // Retrieve list of federated IDPs for a given pseudo/email
-static void FedSocialIdps(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+static void fedSocialIdps(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
     afb_data_t argd[argc];
     const char *email, *pseudo;
     afb_data_t reply[1];
@@ -71,6 +71,28 @@ static void FedSocialIdps(afb_req_t request, unsigned argc, afb_data_t const arg
     if (count <= 0) goto OnErrorExit;
 
     afb_req_reply(request, count, 1, reply);
+    afb_data_array_unref(argc, argd);
+    return;
+
+OnErrorExit:
+    afb_req_reply(request, FEDID_ERROR, 0, NULL);
+    if (argd[0]) afb_data_array_unref(argc, argd);
+}
+
+// Retrieve list of federated IDPs for a given pseudo/email
+static void fedUserExist(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+    afb_data_t argd[argc];
+    int err;
+
+    const afb_type_t argt[]= {fedUserObjType, FEDID_TRAILLER};
+    err= afb_data_array_convert (argc, argv, argt, argd);
+    if (err < 0) goto OnErrorExit;
+
+    fedUserRawT *fedUser= afb_data_ro_pointer(argd[0]);
+    err= sqlUserExist (request, fedUser->pseudo, fedUser->email);
+    if (err < 0) goto OnErrorExit;
+
+    afb_req_reply(request, err, 0, NULL);
     afb_data_array_unref(argc, argd);
     return;
 
@@ -117,10 +139,7 @@ static void fedUserRegister(afb_req_t request, unsigned argc, afb_data_t const a
 
     const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILLER};
     err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) {
-        argd[0]=NULL;
-        goto OnErrorExit;
-    };
+    if (err < 0) goto OnErrorExit;
 
     // extract raw object from argv
     fedUserRawT *fedUser= afb_data_ro_pointer(argd[0]);
@@ -148,10 +167,7 @@ static void fedUserFederate(afb_req_t request, unsigned argc, afb_data_t const a
 
     const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILLER};
     err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) {
-        argd[0]=NULL;
-        goto OnErrorExit;
-    };
+    if (err < 0) goto OnErrorExit;
 
     // extract raw object from argv
     fedUserRawT *fedUser= afb_data_ro_pointer(argd[0]);
@@ -180,10 +196,7 @@ static void fedSocialCheck(afb_req_t request, unsigned argc, afb_data_t const ar
 
     const afb_type_t argt[]= {fedSocialObjType, FEDID_TRAILLER};
     err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) {
-        argd[0]=NULL;
-        goto OnErrorExit;
-    };
+    if (err < 0) goto OnErrorExit;
 
     // check if user exist
     const fedSocialRawT *fedSocial= afb_data_ro_pointer(argv[0]);
@@ -261,9 +274,10 @@ OnErrorExit:
       {.verb = "ping", .callback = fedPing},
       {.verb = "user-create", .callback = fedUserRegister, .info="federate a new user from a new social ID"},
       {.verb = "user-federate", .callback = fedUserFederate, .info="federate two social ID into one signed federated user"},
-      {.verb = "user-check", .callback = fedUserAttr, .info="check is a given pseudo/email is already federated"},
+      {.verb = "user-check", .callback = fedUserAttr, .info="check is a given attribute email,pseudo exist in DB"},
+      {.verb = "user-exist", .callback = fedUserExist, .info="check is any of pseudo/email is already federated"},
       {.verb = "social-check", .callback = fedSocialCheck, .info="check if a social user is already registered"},
-      {.verb = "social-idps", .callback = FedSocialIdps, .info="retrieve existing federated IDPs for a given user"},
+      {.verb = "social-idps", .callback = fedSocialIdps, .info="retrieve existing federated IDPs for a given user"},
       {.verb = NULL}};
 
   const struct afb_binding_v4 afbBindingV4 = {

@@ -126,6 +126,44 @@ OnErrorExit:
     return -1;
 }
 
+int sqlUserExist (afb_req_t request, const char* pseudo, const char* email) {
+    sqlite3_stmt *queryRqt=NULL;
+    static char queryPattern[]=
+        " select rowid from fed_users"
+        " where pseudo='%s' or email='%s'"
+        ";";
+    int err, status;
+    char *queryStr;
+    int queryLen=asprintf (&queryStr, queryPattern, pseudo, email);
+    if (queryLen<0) goto OnErrorExit;
+
+    // compile request into byte code
+    err= sqlite3_prepare_v3 (dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
+    if (err) goto OnErrorExit;
+
+    // select should return one or no row
+    switch (sqlite3_step(queryRqt)) {
+
+        case SQLITE_DONE:
+            status= FEDID_ATTR_FREE;
+            break;
+
+        case SQLITE_ROW:
+            status= FEDID_ATTR_USED;
+            break;
+
+        default:
+            goto OnErrorExit;
+    }
+    free (queryStr);
+    return status;
+
+OnErrorExit:
+    AFB_REQ_ERROR (request, "[sql_error] %s (sqlUserAttrCheck)", sqlite3_errmsg(dbFd));
+    sqlite3_finalize (queryRqt);
+    return -1;
+}
+
 int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser) {
     sqlite3_stmt *queryRqt=NULL;
 
@@ -296,7 +334,6 @@ int sqlUserLinkIdps (afb_req_t request, const char* pseudo, const char* email, a
     // let build idplist data.
     if (count) {
         idps [count]=NULL;
-        fprintf (stderr, "**** idps=0x%p  value=%s\n", idps, idps[0]);
         err= afb_create_data_raw(&reply[0], fedUserIdpsObjType, idps, 0, fedIdpsFreeCB, idps);
         if (err) goto OnErrorExit;
     }

@@ -34,3 +34,4 @@ int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fe
 int sqlUserAttrCheck (afb_req_t request, const char* attrLabel, const char *attrValue);
 int sqlUserLinkIdps (afb_req_t request, const char* pseudo, const char* email, afb_data_t reply[]);
 int sqlFederateFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser);
+int sqlUserExist (afb_req_t request, const char* pseudo, const char* email);
