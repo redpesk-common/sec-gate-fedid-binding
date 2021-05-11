@@ -34,3 +34,13 @@ INSTALL(FILES
 INSTALL(FILES ${CHEADERS}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
+
+# conf file for ldpath
+configure_file(${TARGET_NAME}.conf.in ${TARGET_NAME}.conf @ONLY)
+
+INSTALL(FILES
+	${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.conf
+	DESTINATION
+	/etc/ld.so.conf.d
+)
+INSTALL(CODE "execute_process(COMMAND ldconfig)")
