@@ -9,5 +9,5 @@ Version: @PROJECT_VERSION@
 
 Requires:
 Libs: -L${prefix}/@PROJECT_NAME@/lib -l@TARGET_NAME@
-Cflags: -I${includedir}%
+Cflags: -I${includedir}
 
