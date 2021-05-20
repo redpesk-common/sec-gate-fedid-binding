@@ -1,8 +1,8 @@
 # Configuration
 
-## fedid-binding AFB hierarchy config
+## sec-gate-fedid-binding AFB hierarchy config
 
-fedid-binding config depends on afb-controller and people used to redpesk or agl AFB controllers should feel home. For the other one config.json as described below remains pretty simple.
+sec-gate-fedid-binding config depends on afb-controller and people used to redpesk or agl AFB controllers should feel home. For the other one config.json as described below remains pretty simple.
 
 *It is nevertheless highly recommended to check your config.json with a json linter after any modification.*
 
@@ -11,7 +11,7 @@ fedid-binding config depends on afb-controller and people used to redpesk or agl
 jq < config.json
 ```
 
-Config.json filename should be place into AFB_FEDID_CONFIG before starting afb-binder. Config can either be a simple filename, a suite of filename separated by ':' or a directory, in which case fedid-binding will take every fedid-*.json file from concerned directory.
+Config.json filename should be place into AFB_FEDID_CONFIG before starting afb-binder. Config can either be a simple filename, a suite of filename separated by ':' or a directory, in which case sec-gate-fedid-binding will take every fedid-*.json file from concerned directory.
 
 ### top hierarchy
 
@@ -105,7 +105,7 @@ Default when prefix is not defined. If config.json declare more than one 'sandbo
   ]
 ```
 
-Linux [capabilities](https://www.openshift.com/blog/linux-capabilities-in-openshift) allow a process to gain a subset of traditional "super admin" privileges. For example it may give the "chown" or "kill" authorization without giving full "sudo" rights. . When running non-privileged fedid-binding may only drop capabilities. If order to give extra capabilities to non-privileged user fedid-binding must run in privileged mode.
+Linux [capabilities](https://www.openshift.com/blog/linux-capabilities-in-openshift) allow a process to gain a subset of traditional "super admin" privileges. For example it may give the "chown" or "kill" authorization without giving full "sudo" rights. . When running non-privileged sec-gate-fedid-binding may only drop capabilities. If order to give extra capabilities to non-privileged user sec-gate-fedid-binding must run in privileged mode.
 
 #### groups (control groups-v2)
 
@@ -117,7 +117,7 @@ Linux [capabilities](https://www.openshift.com/blog/linux-capabilities-in-opensh
   }
 ```
 
-[Cgroups](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html) allow to control/limit resources as CPU,RAM,IO,... Fedid-binding enforces 'cgroup-v2' which is default for Redpesk or latest Fedora. Unfortunately cgroup V1-V2 have a incompatible APIs and even if some compatibility mode exist in practice it is better not to use them.  The good news is that any recent Linux distribution as Ubuntu-20.4 or OpenSuse-15.2, ... have a builtin option to run cgroups-v2, the bad news is that by default they still activate V1. On those distro user should edit corresponding boot flag to activate V2. See [activating cgroup-v2] at the end of this page.
+[Cgroups](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html) allow to control/limit resources as CPU,RAM,IO,... sec-gate-fedid-binding enforces 'cgroup-v2' which is default for Redpesk or latest Fedora. Unfortunately cgroup V1-V2 have a incompatible APIs and even if some compatibility mode exist in practice it is better not to use them.  The good news is that any recent Linux distribution as Ubuntu-20.4 or OpenSuse-15.2, ... have a builtin option to run cgroups-v2, the bad news is that by default they still activate V1. On those distro user should edit corresponding boot flag to activate V2. See [activating cgroup-v2] at the end of this page.
 
 * **cset**: provides CPU affinity. As example "3-5" will limit child process to CPU:3,4,5. [kernel-doc](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/cpusets.html?highlight=cset)
 * **mem**: limit the amount of RAM support "max","hight","min" label. [kernel-doc](https://www.kernel.org/doc/html/v4.19/admin-guide/cgroup-v2.html#memory)
@@ -171,13 +171,13 @@ Linux [capabilities](https://www.openshift.com/blog/linux-capabilities-in-opensh
 Namespace allows to restrict children visibility to the filesystem by executing the process within a private namespace. Note than every children get a private namespace container at execution time, this even when they are configured under the same sandbox umbrella within config.json. Technically namespace relies on Linux kernel 'unshare'
 
 * **opts** allows to defined generic namespace behavior.
-  * **autocreate**: try to create source mount point when they does not exist. If mountpath does not exist and creation fail, fedid-binding will refuse to start.
+  * **autocreate**: try to create source mount point when they does not exist. If mountpath does not exist and creation fail, sec-gate-fedid-binding will refuse to start.
   * **hostname**: change namespace hostname when UTS is unshare
   * **bwrap**: specify a custom brwap file
 
-* **shares**: defines what existing namespace you import from fedid-binding to forked children.  Shares support 'default','disable','enable' tags. Default depend on the hosting environment but generally match with 'enable'.
+* **shares**: defines what existing namespace you import from sec-gate-fedid-binding to forked children.  Shares support 'default','disable','enable' tags. Default depend on the hosting environment but generally match with 'enable'.
   * **all**: set all following namespaces.
-  * **users**: allow or not access to core userspace. When 'disable' children visible UID/GID do not match with hosting environment. *Note that in order to simplify developer live fedid-binding will set a 'fake' uid/gid matching with the one define with namespace->acls.*
+  * **users**: allow or not access to core userspace. When 'disable' children visible UID/GID do not match with hosting environment. *Note that in order to simplify developer live sec-gate-fedid-binding will set a 'fake' uid/gid matching with the one define with namespace->acls.*
   * **cgroup**: when 'disable' children see a new empty cgroup. This even if previously defined cgroups still apply.
   * **net**: remove network visibility. When 'disable' the only remaining available network is 'localhost'. This mode allows the children to exchange with the hosting environment, while preventing them from accessing the Internet.
   * **ipc**: equivalent to 'net' restriction but for Linux 'ipc' mgsset/get system call.
@@ -185,7 +185,7 @@ Namespace allows to restrict children visibility to the filesystem by executing 
 * **mounts**: define mounted entry points to add into children containers. The goal is to provide the minimal set of resources necessary for the execution of a given children. ***Warning**: too many restrictions may prevent children from starting. This scenario might be harder than expected to debug.*
 
   * **target**: this label is mandatory it define the mount point inside your container namespace as view by children processes.
-  * **source**: this is an optional entry point that defines the path within your hosting environment that you wish to import. When undefined source==target, which respond to the situation where you want the same path inside and outside of the container : /usr,/lib64,... When used source path is check at configuration time. If source does not exist and 'autocreate' is set, the fedid-binding will try to create the mounting point on the hosting environment. When source does not exist or cannot be created fedid-binding refuses to start.
+  * **source**: this is an optional entry point that defines the path within your hosting environment that you wish to import. When undefined source==target, which respond to the situation where you want the same path inside and outside of the container : /usr,/lib64,... When used source path is check at configuration time. If source does not exist and 'autocreate' is set, the sec-gate-fedid-binding will try to create the mounting point on the hosting environment. When source does not exist or cannot be created sec-gate-fedid-binding refuses to start.
 
   * **mode**: specify the type of mount to use:
     * **rw/ro** or 'read'/'write' is used to mount directory in either read-only or read-write.
@@ -220,16 +220,16 @@ This section exposes for a given sandbox children commands. Command only require
 
 * **exec**
 
-  * **cmdpath**: full command file path to execute (no search path allowed). Fedid-binding check at startup time that exec file is executable by the hosting environnement. Nevertheless it cannot assert that it will still be executable after applying sandbox restrictions.
+  * **cmdpath**: full command file path to execute (no search path allowed). sec-gate-fedid-binding check at startup time that exec file is executable by the hosting environnement. Nevertheless it cannot assert that it will still be executable after applying sandbox restrictions.
   * **args** : a unique or array of arguments. Arguments can be expandable either at config time with '$NAME' or at query time with '%pattern%'. ***Warning**: argument expansion at query time is case sensitive.*
-    * **$NAME** : config time expansion. On top of traditional environment variables fedid-binding support few extra builtin expansion: $SANDBOX, $COMMAND, $APINAME, $PID, $UID, $GID, $TODAY, $UUID.
+    * **$NAME** : config time expansion. On top of traditional environment variables sec-gate-fedid-binding support few extra builtin expansion: $SANDBOX, $COMMAND, $APINAME, $PID, $UID, $GID, $TODAY, $UUID.
     * **%name%***  those patterns are expanded at command launching time. By searching within query args json_object corresponding key. For example if your command line used '"exec": {"cmdpath": "/bin/sleep", "args": ["%timeout%"]}' then a query with '{"action":"start", "args": {"timeout": "180"}}' will fork/exec 'sleep 180'.
 
 * **verbose**: overload sandbox verbosity level. ***Warning** verbosity [5-9] are reserve to internal code debugging. With verbosity=5, query arguments expansion happen in main process and not in child to help 'gdb' debugging, nevertheless in this case any expansion error may kill the server.*
 * **timeout**: overload sandbox timeout. (note zero == no-timeout)
 * **info**: describes command function. Is return as part of 'api/info' introspection.
 * **usage**: is used to populate HTML5 help query area.
-* **encoder**: specify with output encoder should be used. When not used default 'document' encoder is used. fedid-binding provides 3 builtin encoders, nevertheless developer may add custom output formatting with encoder plugins. *Note: check plugin directory on github for a custom encoder sample.*
+* **encoder**: specify with output encoder should be used. When not used default 'document' encoder is used. sec-gate-fedid-binding provides 3 builtin encoders, nevertheless developer may add custom output formatting with encoder plugins. *Note: check plugin directory on github for a custom encoder sample.*
 
   * **text**: returns a json_array for both stdout/stderr at the end of command execution. Supports 'maxlen' & 'maxline' options.
   * **line**: returns a json_string even each time a new line appear on stdout. Stderr keeps 'document' behavior.
@@ -320,7 +320,7 @@ Each command may define its own required privileges (Linux SeLinux/Smack & Cynar
 
 ### Api Response
 
-fedid-binding send an OK/FX response when launching the command *(equivalent to '&' background launch in bash)*. Response returns task pid and other misc information.
+sec-gate-fedid-binding send an OK/FX response when launching the command *(equivalent to '&' background launch in bash)*. Response returns task pid and other misc information.
 
 ```json
 {
@@ -364,7 +364,7 @@ Children fedid task output always come back as events. The model depend on chose
 
 ## Activating cgroup-v2
 
-While recent OpenSuse, Ubuntu or Debian support cgroups-v2 by default they only activate compatibility mode. In this mode cgroup controller use in V1 cannot be use in V2 and vice versa. As fedid-binding request all controller in V2, compatibility mode is not really useful and you should move all control to V2. The good news is that when rebooting systemd, lxc, docker,... notice the change and commute automatically to full V2 mode. Except is you have custom applications that support only V1 mode the shift to V2 should be fully transparent.
+While recent OpenSuse, Ubuntu or Debian support cgroups-v2 by default they only activate compatibility mode. In this mode cgroup controller use in V1 cannot be use in V2 and vice versa. As sec-gate-fedid-binding request all controller in V2, compatibility mode is not really useful and you should move all control to V2. The good news is that when rebooting systemd, lxc, docker,... notice the change and commute automatically to full V2 mode. Except is you have custom applications that support only V1 mode the shift to V2 should be fully transparent.
 
 ### Fedora & Redpesk
 

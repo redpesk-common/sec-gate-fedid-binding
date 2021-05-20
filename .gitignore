@@ -4,5 +4,6 @@
 *.sln
 *.vcxproj
 *.user
+.vscode
 build
 Build

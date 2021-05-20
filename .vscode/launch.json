@@ -12,7 +12,7 @@
           "program": "/usr/local/bin/afb-binder",
           "args": [
             "--name=afb-fedid",
-            "--binding=./lib/fedid-binding.so",
+            "--binding=./lib/sec-gate-fedid-binding.so",
             "--verbose",
             "--verbose",
             "--verbose",

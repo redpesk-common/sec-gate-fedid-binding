@@ -20,11 +20,11 @@ set(CMAKE_INSTALL_SO_NO_EXE 0)
 
 # Project Info
 # ------------------
-set(PROJECT_NAME fedid-binding)
+set(PROJECT_NAME sec-gate-fedid-binding)
 set(PROJECT_VERSION "1.0")
 set(PROJECT_PRETTY_NAME "Federated Identity Binding")
 set(PROJECT_DESCRIPTION "Bind federated social identity with a local user identity")
-set(PROJECT_URL "https://github.com/iotbzh/fedid-binding")
+set(PROJECT_URL "https://github.com/iotbzh/sec-gate-fedid-binding")
 set(PROJECT_ICON "icon.jpg")
 set(PROJECT_AUTHOR "Fulup Ar Foll")
 set(PROJECT_AUTHOR_MAIL "secretaria@iot.bzh")
@@ -79,7 +79,7 @@ set (PKG_REQUIRED_LIST
 
 # Print a helper message when every thing is finished
 # ----------------------------------------------------
-set( CLOSING_MESSAGE "afb-binder --name=afb-fedid --binding=package/lib/fedid-binding.so -vvv # http://localhost:1234/devtools/index.html")
+set( CLOSING_MESSAGE "afb-binder --name=afb-fedid --binding=package/lib/sec-gate-fedid-binding.so -vvv # http://localhost:1234/devtools/index.html")
 set(PACKAGE_MESSAGE "Install widget file using in the target : afm-util install ${PROJECT_NAME}.wgt")
 
 # Customize link option

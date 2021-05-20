@@ -1,9 +1,9 @@
 type: books
 books:
 -
-    id: fedid_binding
-    title: fedid-binding
-    description: fedid-binding binding documentation
+    id: sec_gate_fedid_binding
+    title: sec-gate-fedid-binding
+    description: sec-gate-fedid-binding binding documentation
     keywords:
     chapters:
     - url: 1-architecture_presentation.md

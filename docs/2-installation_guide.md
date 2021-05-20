@@ -2,10 +2,10 @@
 
 ## Redpesk
 
-fedid-binding is part of redpesk-common and is available on any redpesk installation.
+sec-gate-fedid-binding is part of redpesk-common and is available on any redpesk installation.
 
 ```bash
-sudo dnf install fedid-binding afb-ui-devtools
+sudo dnf install sec-gate-fedid-binding afb-ui-devtools
 ```
 
 ## Other Linux Distributions
@@ -14,21 +14,21 @@ sudo dnf install fedid-binding afb-ui-devtools
 
 ```bash
 # Fedora
-sudo dnf install fedid-binding afb-ui-devtools bubblewrap libcap
+sudo dnf install sec-gate-fedid-binding afb-ui-devtools bubblewrap libcap
 
 # OpenSuse
-sudo zypper install fedid-binding bubblewrap libcap-progs afb-ui-devtools
+sudo zypper install sec-gate-fedid-binding bubblewrap libcap-progs afb-ui-devtools
 
 # Ubuntu
-sudo apt-get install fedid-binding-bin afb-ui-devtools bubblewrap libcap2-bin
+sudo apt-get install sec-gate-fedid-binding-bin afb-ui-devtools bubblewrap libcap2-bin
 ```
 
 # Quick test
 
-## start fedid-binding samples
+## start sec-gate-fedid-binding samples
 ```
-AFB_FEDID_CONFIG=/var/local/lib/afm/applications/fedid-binding/etc \
-afb-binder --name=afb-fedid --binding=/var/local/lib/afm/applications/fedid-binding/lib/afb-fedid.so --verbose
+AFB_FEDID_CONFIG=/var/local/lib/afm/applications/sec-gate-fedid-binding/etc \
+afb-binder --name=afb-fedid --binding=/var/local/lib/afm/applications/sec-gate-fedid-binding/lib/afb-fedid.so --verbose
 ```
 ## Connect to HTML5 test page
 
@@ -38,9 +38,9 @@ Copy `localhost:1234/devtools/index.html`in your browser address bar to connect 
 
 * if you rather CLI interface to HTML5, feel free to replace 'afb-ui-devtools' with 'afb-client'.
 
-## Rebuild 'fedid-binding' from sources
+## Rebuild 'sec-gate-fedid-binding' from sources
 
-**Notice**: recompiling fedid-binding is not requirer to implement your own set of commands and/or sandbox containers. You should recompile 'fedid-binding' only when:
+**Notice**: recompiling sec-gate-fedid-binding is not requirer to implement your own set of commands and/or sandbox containers. You should recompile 'sec-gate-fedid-binding' only when:
 
 * targeting a not supported environment/distribution.
 * changing code to fix bug or propose improvement *(contributions are more than welcome)*
@@ -63,7 +63,7 @@ Copy `localhost:1234/devtools/index.html`in your browser address bar to connect 
 
 >Note: For Ubuntu/OpenSuse/Fedora specific instructions check [redpesk-developer-guide]({% chapter_link host-configuration-doc.setup-your-build-host#install-the-application-framework-1 %})
 
-#### Install fedid-binding specific dependencies
+#### Install sec-gate-fedid-binding specific dependencies
 
 * libcap-ng-devel
 * libseccomp-devel
@@ -76,7 +76,7 @@ Copy `localhost:1234/devtools/index.html`in your browser address bar to connect 
 ### Download source from git
 
 ```bash
-git clone https://github.com/redpesk-common/fedid-binding.git
+git clone https://github.com/redpesk-common/sec-gate-fedid-binding.git
 ```
 
 ### Build your binding

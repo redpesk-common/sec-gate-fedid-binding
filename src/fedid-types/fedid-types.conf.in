@@ -1,2 +1,2 @@
-@CMAKE_INSTALL_PREFIX@/fedid-binding/lib
-@CMAKE_INSTALL_PREFIX@/fedid-binding/lib64
+@CMAKE_INSTALL_PREFIX@/sec-gate-fedid-binding/lib
+@CMAKE_INSTALL_PREFIX@/sec-gate-fedid-binding/lib64

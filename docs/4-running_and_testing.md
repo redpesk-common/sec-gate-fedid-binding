@@ -1,6 +1,6 @@
 ## Running/Testing
 
-Fedid-binding implements *afb-libcontroller* and requires a valid afb-controller-config.json to operate. For testing purpose the simplest way
+sec-gate-fedid-binding implements *afb-libcontroller* and requires a valid afb-controller-config.json to operate. For testing purpose the simplest way
 is to define `AFB_FEDID_CONFIG` environment variable with a full or relative path to binder *rootdir*.
 
 ### Requirements
@@ -12,15 +12,15 @@ is to define `AFB_FEDID_CONFIG` environment variable with a full or relative pat
   * afb-client for testing command line interface
   * afb-ui-devtools for html5 test with a web-browser (chromium, firefox, ...)
 
-If you run redpesk simply install the package with `dnf install fedid-binding` for other platform check redpesk [developer guide]({% chapter_link host-configuration-doc.setup-your-build-host %})
+If you run redpesk simply install the package with `dnf install sec-gate-fedid-binding` for other platform check redpesk [developer guide]({% chapter_link host-configuration-doc.setup-your-build-host %})
 
 
 
-## Run fedid-binding samples
+## Run sec-gate-fedid-binding samples
 
 ``` bash
 # move to default install directory
-export AFB_FEDID_INSTALL="/var/local/lib/afm/applications/fedid-binding"
+export AFB_FEDID_INSTALL="/var/local/lib/afm/applications/sec-gate-fedid-binding"
 
 # running without privileged
 AFB_FEDID_CONFIG="$AFB_FEDID_INSTALL/etc/fedid-nspace-config.json" afb-binder --name=afb-fedid --workdir=$AFB_FEDID_INSTALL --binding=./lib/afb-fedid.so --verbose
@@ -46,11 +46,11 @@ Open binding UI with browser at `[host]:[port]/devtools/index.html` in your brow
 
 You should see a page as the one below fitting your configuration. To activate a command simply click, select a sample and sent.
 
-![afb-ui-devtool](assets/fedid-binding-exec.jpg)
+![afb-ui-devtool](assets/sec-gate-fedid-binding-exec.jpg)
 
 ## Command line test
 
-### Connect *afb-client* to fedid-binding service
+### Connect *afb-client* to sec-gate-fedid-binding service
 
 ``` bash
 afb-client --human ws://localhost:1234/api
@@ -96,10 +96,10 @@ start:  sleep 180;
 
 Check for conf.d/project/etc for more advance samples.
 
-Note: depending if you start fedid-binding in a privilege mode or not, some behavior may change. For example "user/group" or "capacity" required to start the binder in admin mode with sudo.
+Note: depending if you start sec-gate-fedid-binding in a privilege mode or not, some behavior may change. For example "user/group" or "capacity" required to start the binder in admin mode with sudo.
 
 ```log
-- NOTICE: [API fedid] sandboxParseAcls: [ignoring user/group acls] sandbox='sandbox-demo' no uid/gid privileges ignoring user='"daemon"' group='"dialout"' [/home/fulup/fedid-binding/src/- fedid-sandbox.c:510,sandboxParseAcls]
+- NOTICE: [API fedid] sandboxParseAcls: [ignoring user/group acls] sandbox='sandbox-demo' no uid/gid privileges ignoring user='"daemon"' group='"dialout"' [/home/fulup/sec-gate-fedid-binding/src/- fedid-sandbox.c:510,sandboxParseAcls]
 - NOTICE: [API fedid] [capability ignored] sandbox='sandbox-demo' capability='KILL[set]' (sandboxParseOneCap)
 - NOTICE: [API fedid] [cgroups ignored] sandbox=sandbox-demo user=1000 not privileged (sandboxLoadOne)
 ```
@@ -115,7 +115,7 @@ You may activate all config in one shot by using placing sample config name with
 ```
 
 **Warning** if you load multiple file double-check that they register different APIs name. Your HTML5 interface should reflect
-![fedid-biding-html5](assets/fedid-binding-dualconf.jpg)
+![fedid-biding-html5](assets/sec-gate-fedid-binding-dualconf.jpg)
 
 ## Testing with GDB
 
@@ -128,7 +128,7 @@ AFB_FEDID_CONFIG=../conf.d/project/etc/fedid-simple-config.json gdb --args afb-b
 
 Namespace allows to create a *fake* root filesystem that only expose the minimal necessary resources. Unfortunately depending on your restriction the process may not even start, with no-log to help debugging the situation.
 
-For a quick namespace test, start fedid-binding with *fedid-sample-nspace.json*. Then use *fedid/admin list* api/verb to explore your namespace.
+For a quick namespace test, start sec-gate-fedid-binding with *fedid-sample-nspace.json*. Then use *fedid/admin list* api/verb to explore your namespace.
 
 ```bash
 AFB_FEDID_CONFIG=./conf.d/project/etc/fedid-sample-nspace.json afb-binder --name=afb-fedid --binding=./package/lib/afb-fedid.so
@@ -138,11 +138,11 @@ Namespace can a tricky to debug. In case of doubt add {"verbose":1} to query arg
 
 ## Testing formatting
 
-fedid-binding support 3 builtin formatting options. Encoder formatting is enforced for each command within config.json. Default encoder is "DOCUMENT" and it cannot not be change at query time. Check *fedid-sample-encoders.json* for example. If you need the same command with multiple formatting, then your config should duplicate the entry with different uid.
+sec-gate-fedid-binding support 3 builtin formatting options. Encoder formatting is enforced for each command within config.json. Default encoder is "DOCUMENT" and it cannot not be change at query time. Check *fedid-sample-encoders.json* for example. If you need the same command with multiple formatting, then your config should duplicate the entry with different uid.
 
 ## Exposing fedid API as AFB micro-service
 
-In order to make fedid-binding api accessible from other AFB micro-service you simply export the API with *--ws-server=unix:/path/apiname* as you would do for any other AFB micro-service. The exposed API may later be imported with *--ws-client==unix:/path/apiname* by any afb-binder that get corresponding privileges. *Note: when exposing an API locally it is a good practice to remove TCP/IP visibility with --no-httpd*
+In order to make sec-gate-fedid-binding api accessible from other AFB micro-service you simply export the API with *--ws-server=unix:/path/apiname* as you would do for any other AFB micro-service. The exposed API may later be imported with *--ws-client==unix:/path/apiname* by any afb-binder that get corresponding privileges. *Note: when exposing an API locally it is a good practice to remove TCP/IP visibility with --no-httpd*
 
 ```bash
 # note than --ws-server=unix exported API should match with selected config.json
@@ -159,7 +159,7 @@ afb-client --direct unix:/run/user/$UID/simple
 
 ## Autoload/Autostart
 
-fedid-binding support an 'autoload', any action in this sections will be tried at binding starup time.
+sec-gate-fedid-binding support an 'autoload', any action in this sections will be tried at binding starup time.
 ```json
   "onload": [
     {
@@ -174,9 +174,9 @@ fedid-binding support an 'autoload', any action in this sections will be tried a
 To run the test.
 
 - Install 'wireguard-tools' to get 'wg-quick' helper.
-- Start 'wireguard-autoconfig.sh' to create a test config into /etc/wireguard/fedid-binding.conf
-- Check with ```sudo wg-quick up fedid-binding``` that your config works.
-- Start 'fedid-binding' in privileged mode with
+- Start 'wireguard-autoconfig.sh' to create a test config into /etc/wireguard/sec-gate-fedid-binding.conf
+- Check with ```sudo wg-quick up sec-gate-fedid-binding``` that your config works.
+- Start 'sec-gate-fedid-binding' in privileged mode with
 ```bash
 sudo AFB_FEDID_CONFIG=../conf.d/project/etc/wireguard-autostart.json afb-binder --name=afb-fedid --binding=package/lib/afb-fedid.so --verbose
 
@@ -184,7 +184,7 @@ sudo AFB_FEDID_CONFIG=../conf.d/project/etc/wireguard-autostart.json afb-binder 
 
 ## caching events
 
-fedid-binding is an [afb-controller](/docs/en/master/developer-guides/controllerConfig.html) and may on event reception execute internal/external API. For external action you should use *--ws-client=xxx* to import the api within fedid-binding context. Note that to execute an external API you also need corresponding privileges.
+sec-gate-fedid-binding is an [afb-controller](/docs/en/master/developer-guides/controllerConfig.html) and may on event reception execute internal/external API. For external action you should use *--ws-client=xxx* to import the api within sec-gate-fedid-binding context. Note that to execute an external API you also need corresponding privileges.
 ```json
   "events": [
     {
