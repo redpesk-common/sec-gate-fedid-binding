@@ -40,6 +40,8 @@ struct afb_type_x4 *fedSocialObjType=NULL;
 struct afb_type_x4 *fedUserIdpsObjType=NULL;
 
 void fedIdpsFreeCB (void *data) {
+    assert(data != NULL);
+
     char **idps= (char**)data;
 
     for (int idx=0; idps[idx]; idx++) {
@@ -49,6 +51,8 @@ void fedIdpsFreeCB (void *data) {
 }
 
 void fedUserFreeCB (void *data) {
+    assert(data != NULL);
+
     fedUserRawT *fedUser= (fedUserRawT*)data;
     if (!fedUser->slave) {
         if (fedUser->pseudo) free ((void*)fedUser->pseudo);
@@ -62,13 +66,15 @@ void fedUserFreeCB (void *data) {
 }
 
 void fedSocialFreeCB (void*ctx) {
-	fedSocialRawT *fedSocial= (fedSocialRawT*)ctx;
+    assert(ctx != NULL);
+
+    fedSocialRawT *fedSocial= (fedSocialRawT*)ctx;
     if (!fedSocial->slave) {
-    	if (fedSocial->idp) free ((void*)  fedSocial->idp);
-	    if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
+        if (fedSocial->idp) free ((void*)  fedSocial->idp);
+        if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
     }
     fedSocial->slave=-1; // help debug
-	free (fedSocial);
+    free (fedSocial);
 }
 
 static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb_data_t *dest) {

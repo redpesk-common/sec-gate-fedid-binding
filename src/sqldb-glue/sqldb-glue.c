@@ -69,6 +69,7 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
 
 
 void sqlFree (void *object) {
+  assert(object!=NULL);
   sqlite3_free (object);
 }
 
@@ -82,6 +83,8 @@ typedef struct {
 } sqlsqlCtxT;
 
 static void sqlUserFreeCB (void *data) {
+    assert(data!=NULL);
+
     sqlsqlCtxT *sqlCtx= (sqlsqlCtxT*)data;
 
     sqlite3_finalize (sqlCtx->rqt);
