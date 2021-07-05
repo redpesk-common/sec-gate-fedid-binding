@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
