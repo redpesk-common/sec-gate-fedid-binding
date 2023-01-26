@@ -21,7 +21,7 @@ set(CMAKE_INSTALL_SO_NO_EXE 0)
 # Project Info
 # ------------------
 set(PROJECT_NAME sec-gate-fedid-binding)
-set(PROJECT_VERSION "1.0")
+set(PROJECT_VERSION "1.0.5")
 set(PROJECT_PRETTY_NAME "Federated Identity Binding")
 set(PROJECT_DESCRIPTION "Bind federated social identity with a local user identity")
 set(PROJECT_URL "https://github.com/iotbzh/sec-gate-fedid-binding")
