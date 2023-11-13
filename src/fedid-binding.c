@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <json-c/json.h>
-#include <wrap-json.h>
+#include <rp-utils/rp-jsonc.h>
 
 
 static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
@@ -61,7 +61,7 @@ static void fedSocialIdps(afb_req_t request, unsigned argc, afb_data_t const arg
     };
 
     json_object *queryJ=  afb_data_ro_pointer(argd[0]);
-    err= wrap_json_unpack (queryJ, "{s?s s?s}"
+    err=  rp_jsonc_unpack (queryJ, "{s?s s?s}"
         ,"email", &email
         ,"pseudo", &pseudo
     );
@@ -111,7 +111,7 @@ static void fedUserAttr(afb_req_x4_t request, unsigned argc, afb_data_x4_t const
     if (err < 0) goto OnErrorExit;
 
     json_object *queryJ=  afb_data_ro_pointer(argd[0]);
-    err= wrap_json_unpack (queryJ, "{ss ss}"
+    err=  rp_jsonc_unpack (queryJ, "{ss ss}"
         ,"label", &label
         ,"value", &value
     );
@@ -228,7 +228,7 @@ static int fedCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *
 
         json_object *configJ = ctlarg->pre_init.config;
         const char *dbpath= FEDID_SQLLITE_PATH;
-        if (configJ) wrap_json_unpack (configJ, "{ss}", "dbpath", &dbpath);
+        if (configJ)  rp_jsonc_unpack (configJ, "{ss}", "dbpath", &dbpath);
 
         err = sqlCreate(dbpath, &response);
         if (err) {

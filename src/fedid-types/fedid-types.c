@@ -29,7 +29,7 @@
 #include "fedid-types.h"
 
 #include <json-c/json.h>
-#include <wrap-json.h>
+#include <rp-utils/rp-jsonc.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -81,7 +81,7 @@ static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb
     json_object *socialJ;
     const fedSocialRawT *fedSocial =  afb_data_ro_pointer(socialD);
 
-    int err= wrap_json_pack (&socialJ, "{ss ss si*}"
+    int err=  rp_jsonc_pack (&socialJ, "{ss ss si*}"
         ,"idp", fedSocial->idp
         ,"fedkey", fedSocial->fedkey
         ,"stamp", fedSocial->stamp
@@ -102,7 +102,7 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     // socialRaw depend on socialJson we have dest lock json object until raw object die.
     fedSocialRawT *fedSocial= calloc (1, sizeof(fedSocialRawT));
 
-    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?i}"
+    err=  rp_jsonc_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?i}"
         ,"fedkey", &fedSocial->fedkey
         ,"idp", &fedSocial->idp
         ,"stamp", &fedSocial->stamp
@@ -127,7 +127,7 @@ static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_dat
     json_object *userJ;
     const fedUserRawT *fedUser =  afb_data_ro_pointer(userD);
 
-    int err= wrap_json_pack (&userJ, "{ss ss* ss* ss* ss* si}"
+    int err=  rp_jsonc_pack (&userJ, "{ss ss* ss* ss* ss* si}"
         ,"pseudo", fedUser->pseudo
         ,"email", fedUser->email
         ,"name", fedUser->name
@@ -151,7 +151,7 @@ static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_d
     // userRaw depend on userJson we have dest lock json object until raw object die.
     fedUserRawT *fedUser= calloc (1, sizeof(fedUserRawT));
 
-    err= wrap_json_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?s s?s s?s}"
+    err=  rp_jsonc_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?s s?s s?s}"
         ,"pseudo", &fedUser->pseudo
         ,"email", &fedUser->email
         ,"name", &fedUser->name

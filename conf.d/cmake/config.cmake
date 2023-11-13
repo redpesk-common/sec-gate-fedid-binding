@@ -74,7 +74,8 @@ set (PKG_REQUIRED_LIST
 	json-c
 	afb-binding
 	sqlite3
-	afb-libhelpers
+    librp-utils
+
 )
 
 # Print a helper message when every thing is finished
