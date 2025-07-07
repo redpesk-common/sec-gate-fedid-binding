@@ -35,9 +35,9 @@
 #include <string.h>
 #include <assert.h>
 
-struct afb_type_x4 *fedUserObjType=NULL;
-struct afb_type_x4 *fedSocialObjType=NULL;
-struct afb_type_x4 *fedUserIdpsObjType=NULL;
+afb_type_t fedUserObjType=NULL;
+afb_type_t fedSocialObjType=NULL;
+afb_type_t fedUserIdpsObjType=NULL;
 
 void fedIdpsFreeCB (void *data) {
     assert(data != NULL);

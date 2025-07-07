@@ -107,7 +107,7 @@ OnErrorExit:
     if (argd[0]) afb_data_array_unref(argc, argd);
 }
 
-static void fedUserAttr(afb_req_x4_t request, unsigned argc, afb_data_x4_t const argv[]) {
+static void fedUserAttr(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
     afb_data_t argd[argc];
     const char *label, *value;
     int err;
@@ -276,7 +276,7 @@ OnErrorExit:
     return 1;
 }
 
-  const afb_verb_t verbs[] = {
+static const afb_verb_t verbs[] = {
       {.verb = "ping", .callback = fedPing},
       {.verb = "user-create", .callback = fedUserRegister, .info="federate a new user from a new social ID"},
       {.verb = "user-federate", .callback = fedUserFederate, .info="federate two social ID into one signed federated user"},
@@ -286,10 +286,10 @@ OnErrorExit:
       {.verb = "social-idps", .callback = fedSocialIdps, .info="retrieve existing federated IDPs for a given user"},
       {.verb = NULL}};
 
-  const struct afb_binding_v4 afbBindingV4 = {
+const afb_binding_t afbBindingExport = {
       .api = "fedid",
       .specification = "Federated Identity handling with an SQLlite backend",
       .verbs = verbs,
       .mainctl = fedCtrl,
-  };
+};
 
