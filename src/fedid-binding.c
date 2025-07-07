@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 IoT.bzh Company
+ * Copyright (C) 2015-2025 IoT.bzh Company
  * Author "Fulup Ar Foll"
  *
  * $RP_BEGIN_LICENSE$
@@ -23,14 +23,20 @@
 #define _GNU_SOURCE
 
 
-#include "fedid-binding.h"
-#include "sqldb-glue.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <json-c/json.h>
 #include <rp-utils/rp-jsonc.h>
 
+#define AFB_BINDING_VERSION 4
+#include <afb/afb-binding.h>
+
+#if !defined(FEDID_SQLLITE_PATH)
+#define FEDID_SQLLITE_PATH "/tmp/fedid.db"
+#endif
+
+#include "fedid-types/fedid-types.h"
+#include "sqldb-glue/sqldb-glue.h"
 
 static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
   static int count = 0;
@@ -286,3 +292,4 @@ OnErrorExit:
       .verbs = verbs,
       .mainctl = fedCtrl,
   };
+

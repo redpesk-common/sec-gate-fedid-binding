@@ -5,6 +5,6 @@ Name: @PROJECT_NAME@
 Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
 
-Libs: -L${libdir} -l@TARGET_NAME@
+Libs: -L${libdir} -lfedid-types
 Cflags: -I${includedir}
 

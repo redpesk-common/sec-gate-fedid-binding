@@ -1,0 +1,23 @@
+rp-manifest: 1
+id: @PROJECT_NAME@
+version: @PROJECT_VERSION@
+name: @PROJECT_NAME@
+description: @PROJECT_DESCRIPTION@
+author: IoT.bzh
+license: redpesk
+required-permission:
+  urn:AGL:permission::public:hidden:
+    name: urn:AGL:permission::public:hidden
+    value: required
+targets:
+  - target: main
+    content:
+      src: lib/sec-gate-fedid-binding.so
+      type: application/vnd.agl.service
+    provided-api:
+      - name: fedid
+        value: ws
+    required-binding:
+      - name: lib/sec-gate-fedid-binding.so
+        value: local
+

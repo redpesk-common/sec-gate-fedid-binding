@@ -25,9 +25,10 @@
 #define AFB_BINDING_VERSION 4
 #include <afb/afb-binding.h>
 
-#include "fedid-types.h"
+#include "../fedid-types/fedid-types.h"
 
 typedef int (*sqlQueryCbT)(void*,int,char**,char**);
+
 int sqlCreate(const char *dbpath, char **response);
 int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_data_t *response);
 int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser);
