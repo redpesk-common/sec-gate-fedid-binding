@@ -109,7 +109,7 @@ static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, a
     );
     if (err) goto OnErrorExit;
 
-    err= afb_create_data_raw (dest, fedSocialObjType, &fedSocial, 0, fedSocialFreeCB, fedSocial);
+    err= afb_create_data_raw (dest, fedSocialObjType, fedSocial, 0, fedSocialFreeCB, fedSocial);
     if (err) goto OnErrorExit;
 
     // link json object with raw dependency
