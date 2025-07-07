@@ -79,8 +79,8 @@ long sqlLastRow (void) {
 }
 
 typedef struct {
-   sqlite3_stmt *rqt;
    fedUserRawT user;
+   sqlite3_stmt *rqt;
 } sqlsqlCtxT;
 
 static void sqlUserFreeCB (void *data) {
