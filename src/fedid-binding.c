@@ -59,7 +59,7 @@ static void fedSocialIdps(afb_req_t request, unsigned argc, afb_data_t const arg
     afb_data_t reply[1];
     int err, count;
 
-    const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILLER};
+    const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
     err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) {
         argd[0]=NULL;
@@ -90,7 +90,7 @@ static void fedUserExist(afb_req_t request, unsigned argc, afb_data_t const argv
     afb_data_t argd[argc];
     int err;
 
-    const afb_type_t argt[]= {fedUserObjType, FEDID_TRAILLER};
+    const afb_type_t argt[]= {fedUserObjType, FEDID_TRAILER};
     err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) goto OnErrorExit;
 
@@ -112,7 +112,7 @@ static void fedUserAttr(afb_req_t request, unsigned argc, afb_data_t const argv[
     const char *label, *value;
     int err;
 
-    const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILLER};
+    const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
     err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) goto OnErrorExit;
 
@@ -143,7 +143,7 @@ static void fedUserRegister(afb_req_t request, unsigned argc, afb_data_t const a
     // make sure we get right input parameters types
     if (argc != 2) goto OnErrorExit;
 
-    const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILLER};
+    const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILER};
     err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) goto OnErrorExit;
 
@@ -171,7 +171,7 @@ static void fedUserFederate(afb_req_t request, unsigned argc, afb_data_t const a
     // make sure we get right input parameters types
     if (argc != 2) goto OnErrorExit;
 
-    const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILLER};
+    const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILER};
     err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) goto OnErrorExit;
 
@@ -200,7 +200,7 @@ static void fedSocialCheck(afb_req_t request, unsigned argc, afb_data_t const ar
 
     if (argc != 1) goto OnErrorExit;
 
-    const afb_type_t argt[]= {fedSocialObjType, FEDID_TRAILLER};
+    const afb_type_t argt[]= {fedSocialObjType, FEDID_TRAILER};
     err= afb_data_array_convert (argc, argv, argt, argd);
     if (err < 0) goto OnErrorExit;
 

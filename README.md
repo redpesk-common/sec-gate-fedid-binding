@@ -1,7 +1,11 @@
 # Fedid Binding
 
-sec-gate-fedid-binding exposes through a standard set of REST/Websocket APIs a simple mechanism to launch within secure sandbox containers your preferred Linux native commands or scripts: bash, python, node, ruby ...
-Sandbox security model scales from simple Linux access control to advanced mechanism as capabilities, cgroups, namespaces, ...
+sec-gate-fedid-binding exposes through a standard set of REST/Websocket APIs
+a simple mechanism to launch within secure sandbox containers your preferred
+Linux native commands or scripts: bash, python, node, ruby ...
+
+Sandbox security model scales from simple Linux access control to advanced
+mechanism as capabilities, cgroups, namespaces, ...
 
 **Developer and user documentation at [redpesk-docs](http://docs.redpesk.bzh/docs/en/master/apis-services/sec-gate-fedid-binding/fedid_binding_doc.html)**
 
@@ -13,7 +17,7 @@ sec-gate-fedid-binding can be used in standalone to provide a simple secure HTML
 
 
 Fulup notes:
- * si double click sur login alors on popup pour logout ou anulation
+ * si double click sur login alors on popup pour logout ou annulation
  
  * si federate on ajoute un link de fedsocial de plus
 
