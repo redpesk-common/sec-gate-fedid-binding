@@ -31,12 +31,13 @@
 #define AFB_BINDING_VERSION 4
 #include <afb/afb-binding.h>
 
+#include "fedid-types/fedid-types.h"
+#include "sqldb-glue/sqldb-glue.h"
+
 #if !defined(FEDID_SQLLITE_PATH)
 #define FEDID_SQLLITE_PATH "/tmp/fedid.db"
 #endif
 
-#include "fedid-types/fedid-types.h"
-#include "sqldb-glue/sqldb-glue.h"
 
 static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[])
 {

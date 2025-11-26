@@ -24,16 +24,12 @@
 
 #define AFB_BINDING_NO_ROOT
 #define AFB_BINDING_VERSION 4
-#include <afb/afb-binding.h>
-
 #include "fedid-types.h"
+
+#include <string.h>
 
 #include <json-c/json.h>
 #include <rp-utils/rp-jsonc.h>
-
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
 
 afb_type_t fedUserObjType = NULL;
 afb_type_t fedSocialObjType = NULL;
