@@ -117,8 +117,8 @@ static int socialFromJsonCB(void *ctx,
     fedSocial->slave = 1;
     // clang-format off
     err = rp_jsonc_unpack(obj, "{ss ss s?i}",
-                          "fedkey", &fedSocial->fedkey,
                           "idp", &fedSocial->idp,
+                          "fedkey", &fedSocial->fedkey,
                           "stamp", &fedSocial->stamp);
     // clang-format on
     if (err) {
@@ -190,12 +190,13 @@ static int userFromJsonCB(void *ctx,
 
     fedUser->slave = 1;
     // clang-format off
-    err = rp_jsonc_unpack(obj, "{ss ss s?s s?s s?s}",
+    err = rp_jsonc_unpack(obj, "{ss ss s?s s?s s?s s?i}",
                           "pseudo", &fedUser->pseudo,
                           "email", &fedUser->email,
                           "name", &fedUser->name,
                           "avatar", &fedUser->avatar,
-                          "company", &fedUser->company);
+                          "company", &fedUser->company,
+                          "stamp", &fedUser->stamp);
     // clang-format on
     if (err) {
         fedUserFree(fedUser);
