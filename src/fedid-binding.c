@@ -265,22 +265,28 @@ static int fedCtrl(afb_api_t api,
                    afb_ctlarg_t ctlarg,
                    void *userdata)
 {
-    char *response;
-    int err;
-
     switch (ctlid) {
-    case afb_ctlid_Root_Entry:
-        AFB_NOTICE("unexpected root entry");
-        break;
-
-    case afb_ctlid_Pre_Init:
-        afb_api_provide_class(api, "identity");
-
-        json_object *configJ = ctlarg->pre_init.config;
+    case afb_ctlid_Pre_Init: {
         const char *dbpath = FEDID_SQLLITE_PATH;
-        if (configJ)
-            rp_jsonc_unpack(configJ, "{ss}", "dbpath", &dbpath);
+        char *response;
+        int err;
+        json_object *config, *item;
 
+        /* register types */
+        err = fedUserObjTypesRegister();
+        if (err) {
+            AFB_ERROR("[register-type fail] Fail to register fed type");
+            goto OnErrorExit;
+        }
+
+        /* get dbpath */
+        config = ctlarg->pre_init.config;
+        if (config != NULL &&
+            json_object_object_get_ex(config, "dbpath", &item) &&
+            json_object_is_type(item, json_type_string))
+            dbpath = json_object_get_string(item);
+
+        /* open db */
         err = sqlCreate(dbpath, &response);
         if (err) {
             AFB_ERROR(
@@ -288,38 +294,20 @@ static int fedCtrl(afb_api_t api,
             goto OnErrorExit;
         }
 
-        err = fedUserObjTypesRegister();
-        if (err) {
-            AFB_ERROR("[register-type fail] Fail to register fed type");
-            goto OnErrorExit;
-        }
+    } break;
 
-        break;
-
+    case afb_ctlid_Root_Entry:
     case afb_ctlid_Init:
-        // afb_api_require_api(api, INIT_REQUIRE_API, 1);
-        // afb_alias_api(afb_api_name(api), "fakename");
-        break;
-
     case afb_ctlid_Class_Ready:
-        AFB_NOTICE("hello binding has classes ready");
-        break;
-
     case afb_ctlid_Orphan_Event:
-        AFB_NOTICE("received orphan event %s", ctlarg->orphan_event.name);
-        break;
-
     case afb_ctlid_Exiting:
-        AFB_NOTICE("exiting code %d", ctlarg->exiting.code);
-        break;
-
     default:
         break;
     }
     return 0;
 
 OnErrorExit:
-    return 1;
+    return -1;
 }
 
 // clang-format off
@@ -353,5 +341,6 @@ const afb_binding_t afbBindingExport = {
     .specification = "Federated Identity handling with an SQLlite backend",
     .verbs = verbs,
     .mainctl = fedCtrl,
+    .provide_class = "identity"
 };
 // clang-format on
