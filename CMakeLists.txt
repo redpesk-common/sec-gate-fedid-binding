@@ -31,14 +31,14 @@ include(GNUInstallDirs)
 
 set(AFM_APP_DIR ${CMAKE_INSTALL_PREFIX}/redpesk CACHE PATH "Applications directory")
 
-pkg_check_modules(mod0 REQUIRED
+pkg_check_modules(modules REQUIRED
 	json-c
 	afb-binding
 	librp-utils-json-c)
 
-include_directories(${mod0_INCLUDE_DIRS})
-add_compile_options(${mod0_CFLAGS})
-add_link_options(${mod0_LDFLAGS})
-link_libraries(${mod0_LIBRARIES})
+include_directories(${modules_INCLUDE_DIRS})
+add_compile_options(${modules_CFLAGS})
+add_link_options(${modules_LDFLAGS})
+link_libraries(${modules_LIBRARIES})
 
 add_subdirectory(src)
