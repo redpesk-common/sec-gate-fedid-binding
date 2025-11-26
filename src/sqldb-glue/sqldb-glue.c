@@ -387,7 +387,7 @@ int sqlUserLinkIdps(afb_req_t request,
     if (count) {
         idps[count] = NULL;
         err = afb_create_data_raw(&reply[0], fedUserIdpsObjType, idps, 0,
-                                  fedIdpsFreeCB, idps);
+                                  (void *)fedIdpsFree, idps);
         if (err)
             goto OnErrorExit;
     }

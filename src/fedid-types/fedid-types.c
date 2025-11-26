@@ -39,52 +39,39 @@ afb_type_t fedUserObjType = NULL;
 afb_type_t fedSocialObjType = NULL;
 afb_type_t fedUserIdpsObjType = NULL;
 
-void fedIdpsFreeCB(void *data)
+void fedIdpsFree(const char **fedIds)
 {
-    assert(data != NULL);
-
-    char **idps = (char **)data;
-
-    for (int idx = 0; idps[idx]; idx++) {
-        free(idps[idx]);
+    if (fedIds != NULL) {
+        const char **iter = fedIds;
+        while (*iter != NULL)
+            free((void *)(*iter++));
+        free(fedIds);
     }
-    free(idps);
 }
 
-void fedUserFreeCB(void *data)
+void fedUserFree(fedUserRawT *fedUser)
 {
-    assert(data != NULL);
-
-    fedUserRawT *fedUser = (fedUserRawT *)data;
-    if (!fedUser->slave) {
-        if (fedUser->pseudo)
+    if (fedUser != NULL) {
+        if (!fedUser->slave) {
             free((void *)fedUser->pseudo);
-        if (fedUser->email)
             free((void *)fedUser->email);
-        if (fedUser->name)
             free((void *)fedUser->name);
-        if (fedUser->avatar)
             free((void *)fedUser->avatar);
-        if (fedUser->company)
             free((void *)fedUser->company);
+        }
+        free(fedUser);
     }
-    fedUser->slave = -1;  // help debug
-    free(fedUser);
 }
 
-void fedSocialFreeCB(void *ctx)
+void fedSocialFree(fedSocialRawT *fedSocial)
 {
-    assert(ctx != NULL);
-
-    fedSocialRawT *fedSocial = (fedSocialRawT *)ctx;
-    if (!fedSocial->slave) {
-        if (fedSocial->idp)
+    if (fedSocial != NULL) {
+        if (!fedSocial->slave) {
             free((void *)fedSocial->idp);
-        if (fedSocial->fedkey)
             free((void *)fedSocial->fedkey);
+        }
+        free(fedSocial);
     }
-    fedSocial->slave = -1;  // help debug
-    free(fedSocial);
 }
 
 static int socialToJsonCB(void *ctx,
@@ -134,11 +121,13 @@ static int socialFromJsonCB(void *ctx,
                           "idp", &fedSocial->idp,
                           "stamp", &fedSocial->stamp);
     // clang-format on
-    if (err)
+    if (err) {
+        fedSocialFree(fedSocial);
         goto OnErrorExit;
+    }
 
     err = afb_create_data_raw(dest, fedSocialObjType, fedSocial, 0,
-                              fedSocialFreeCB, fedSocial);
+                              (void *)fedSocialFree, fedSocial);
     if (err)
         goto OnErrorExit;
 
@@ -208,11 +197,13 @@ static int userFromJsonCB(void *ctx,
                           "avatar", &fedUser->avatar,
                           "company", &fedUser->company);
     // clang-format on
-    if (err)
+    if (err) {
+        fedUserFree(fedUser);
         goto OnErrorExit;
+    }
 
-    err = afb_create_data_raw(dest, fedUserObjType, fedUser, 0, fedUserFreeCB,
-                              fedUser);
+    err = afb_create_data_raw(dest, fedUserObjType, fedUser, 0,
+                              (void *)fedUserFree, fedUser);
     if (err)
         goto OnErrorExit;
 

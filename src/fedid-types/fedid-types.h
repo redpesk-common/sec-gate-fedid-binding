@@ -69,6 +69,6 @@ extern afb_type_t fedUserObjType;
 extern afb_type_t fedSocialObjType;
 extern afb_type_t fedUserIdpsObjType;
 
-void fedUserFreeCB(void *fedUserRawT);
-void fedSocialFreeCB(void *fedSocialRawT);
-void fedIdpsFreeCB(void *idpList);
+void fedUserFree(fedUserRawT *fedUser);
+void fedSocialFree(fedSocialRawT *fedSocial);
+void fedIdpsFree(const char **fedIds);
