@@ -111,6 +111,7 @@ static int socialToJsonCB(void *ctx,
     return 0;
 
 OnErrorExit:
+    *dest = NULL;
     return -1;
 }
 
@@ -120,14 +121,15 @@ static int socialFromJsonCB(void *ctx,
                             afb_data_t *dest)
 {
     int err;
+    json_object *obj = (json_object *)afb_data_ro_pointer(jsonD);
 
-    // socialRaw depend on socialJson we have dest lock json object until raw
-    // object die.
     fedSocialRawT *fedSocial = calloc(1, sizeof(fedSocialRawT));
+    if (fedSocial == NULL)
+        goto OnErrorExit;
 
+    fedSocial->slave = 1;
     // clang-format off
-    err = rp_jsonc_unpack((json_object *)afb_data_ro_pointer(jsonD),
-                          "{ss ss s?i}",
+    err = rp_jsonc_unpack(obj, "{ss ss s?i}",
                           "fedkey", &fedSocial->fedkey,
                           "idp", &fedSocial->idp,
                           "stamp", &fedSocial->stamp);
@@ -142,13 +144,15 @@ static int socialFromJsonCB(void *ctx,
 
     // link json object with raw dependency
     err = afb_data_dependency_add(*dest, jsonD);
-    if (err)
+    if (err) {
+        afb_data_unref(*dest);
         goto OnErrorExit;
-    fedSocial->slave = 1;
+    }
 
     return 0;
 
 OnErrorExit:
+    *dest = NULL;
     return -1;
 }
 
@@ -179,6 +183,7 @@ static int userToJsonCB(void *ctx,
     return 0;
 
 OnErrorExit:
+    *dest = NULL;
     return -1;
 }
 
@@ -188,14 +193,15 @@ static int userFromJsonCB(void *ctx,
                           afb_data_t *dest)
 {
     int err;
+    json_object *obj = (json_object *)afb_data_ro_pointer(jsonD);
 
-    // userRaw depend on userJson we have dest lock json object until raw object
-    // die.
     fedUserRawT *fedUser = calloc(1, sizeof(fedUserRawT));
+    if (fedUser == NULL)
+        goto OnErrorExit;
 
+    fedUser->slave = 1;
     // clang-format off
-    err = rp_jsonc_unpack((json_object *)afb_data_ro_pointer(jsonD),
-                          "{ss ss s?s s?s s?s}",
+    err = rp_jsonc_unpack(obj, "{ss ss s?s s?s s?s}",
                           "pseudo", &fedUser->pseudo,
                           "email", &fedUser->email,
                           "name", &fedUser->name,
@@ -212,13 +218,15 @@ static int userFromJsonCB(void *ctx,
 
     // link json object with raw dependency
     err = afb_data_dependency_add(*dest, jsonD);
-    fedUser->slave = 1;
-    if (err)
+    if (err) {
+        afb_data_unref(*dest);
         goto OnErrorExit;
+    }
 
     return 0;
 
 OnErrorExit:
+    *dest = NULL;
     return -1;
 }
 
