@@ -341,6 +341,7 @@ const afb_binding_t afbBindingExport = {
     .specification = "Federated Identity handling with an SQLlite backend",
     .verbs = verbs,
     .mainctl = fedCtrl,
-    .provide_class = "identity"
+    .provide_class = "identity",
+    .noconcurrency = 1
 };
 // clang-format on
