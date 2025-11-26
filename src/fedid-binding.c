@@ -40,16 +40,19 @@
 
 static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
   static int count = 0;
+  int rc;
   char *response;
-  afb_data_t reply[1];
+  afb_data_t reply;
 
-  asprintf(&response, "Pong=%d", count++);
-  AFB_REQ_NOTICE(request, "idp:fedPing count=%d", count);
-
-  afb_create_data_raw(&reply[0], AFB_PREDEFINED_TYPE_STRINGZ, response, strlen(response) + 1, free, NULL);
-  afb_req_reply(request, 0, 1, reply);
-
-  return;
+  count++;
+  AFB_REQ_DEBUG(request, "idp:fedPing count=%d", count);
+  rc = asprintf(&response, "Pong=%d", count);
+  if (rc >= 0)
+    rc = afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, response, (size_t)(rc + 1), free, response);
+  if (rc < 0)
+    afb_req_reply(request, AFB_ERRNO_OUT_OF_MEMORY, 0, NULL);
+  else
+    afb_req_reply(request, 0, 1, &reply);
 }
 
 // Retrieve list of federated IDPs for a given pseudo/email
