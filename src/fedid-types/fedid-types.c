@@ -39,30 +39,9 @@ afb_type_t fedUserObjType = NULL;
 afb_type_t fedSocialObjType = NULL;
 afb_type_t fedUserIdpsObjType = NULL;
 
-void fedIdpsFree(const char **fedIds)
-{
-    if (fedIds != NULL) {
-        const char **iter = fedIds;
-        while (*iter != NULL)
-            free((void *)(*iter++));
-        free(fedIds);
-    }
-}
-
-void fedUserFree(fedUserRawT *fedUser)
-{
-    if (fedUser != NULL) {
-        if (!fedUser->slave) {
-            free((void *)fedUser->pseudo);
-            free((void *)fedUser->email);
-            free((void *)fedUser->name);
-            free((void *)fedUser->avatar);
-            free((void *)fedUser->company);
-        }
-        free(fedUser);
-    }
-}
-
+/*******************************************************
+* fedSocial
+*******************************************************/
 void fedSocialFree(fedSocialRawT *fedSocial)
 {
     if (fedSocial != NULL) {
@@ -145,6 +124,23 @@ OnErrorExit:
     return -1;
 }
 
+/*******************************************************
+* fedUser
+*******************************************************/
+void fedUserFree(fedUserRawT *fedUser)
+{
+    if (fedUser != NULL) {
+        if (!fedUser->slave) {
+            free((void *)fedUser->pseudo);
+            free((void *)fedUser->email);
+            free((void *)fedUser->name);
+            free((void *)fedUser->avatar);
+            free((void *)fedUser->company);
+        }
+        free(fedUser);
+    }
+}
+
 static int userToJsonCB(void *ctx,
                         afb_data_t userD,
                         afb_type_t jsonT,
@@ -222,6 +218,22 @@ OnErrorExit:
     return -1;
 }
 
+/*******************************************************
+* fedIdps
+*******************************************************/
+void fedIdpsFree(const char **fedIdps)
+{
+    if (fedIdps != NULL) {
+        const char **iter = fedIdps;
+        while (*iter != NULL)
+            free((void *)(*iter++));
+        free(fedIdps);
+    }
+}
+
+/*******************************************************
+* Registering
+*******************************************************/
 int fedUserObjTypesRegister()
 {
     static int initialized = 0;
