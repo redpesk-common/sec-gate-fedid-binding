@@ -231,6 +231,86 @@ void fedIdpsFree(const char **fedIdps)
     }
 }
 
+static int idpsToJsonCB(void *ctx,
+                        afb_data_t ipdsD,
+                        afb_type_t jsonT,
+                        afb_data_t *dest)
+{
+        int err;
+    json_object *obj, *str;
+    const char **idps = afb_data_ro_pointer(ipdsD);
+
+    // creates the array
+    obj = json_object_new_array();
+    if (obj == NULL)
+        goto OnErrorExit;
+
+    // fill the array
+    while (*idps) {
+            str = json_object_new_string(*idps++);
+            if (str == NULL)
+                goto OnErrorExitClean;
+            json_object_array_add(obj, str);
+    }
+
+    // makes the data
+    err = afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, obj, 0,
+                              (void *)json_object_put, obj);
+    if (err)
+        goto OnErrorExit;
+    return 0;
+
+OnErrorExitClean:
+    json_object_put(obj);
+OnErrorExit:
+    *dest = NULL;
+    return -1;
+}
+
+static int idpsFromJsonCB(void *ctx,
+                          afb_data_t jsonD,
+                          afb_type_t userT,
+                          afb_data_t *dest)
+{
+    int err;
+    size_t count;
+    json_object *obj, *str;
+    const char **idps = NULL;
+
+    // get the JSON-C array
+    obj = (json_object *)afb_data_ro_pointer(jsonD);
+    if (!json_object_is_type(obj, json_type_array))
+        goto OnErrorExit;
+
+    // allocates the idps list
+    count = json_object_array_length(obj);
+    idps = calloc(count + 1, sizeof *idps);
+    if (idps == NULL)
+        goto OnErrorExit;
+
+    // fill the idps list with copies
+    while(count) {
+        str = json_object_array_get_idx(obj, --count);
+        if (!json_object_is_type(obj, json_type_string))
+            goto OnErrorExit;
+        idps[count] = strdup(json_object_get_string(str));
+        if (idps[count] == NULL)
+            goto OnErrorExit;
+    }
+
+    // creates the data
+    err = afb_create_data_raw(dest, fedUserIdpsObjType, idps, 0,
+                              (void *)fedIdpsFree, idps);
+    if (err)
+        goto OnErrorExit;
+
+    return 0;
+
+OnErrorExit:
+    *dest = NULL;
+    return -1;
+}
+
 /*******************************************************
 * Registering
 *******************************************************/
@@ -262,10 +342,15 @@ int fedUserObjTypesRegister()
     err = afb_type_register(&fedUserIdpsObjType, FEDUSER_IDPS_LIST_TYPENAME, 0);
     if (err)
         goto OnErrorExit;
+    afb_type_add_convert_to(fedUserIdpsObjType, AFB_PREDEFINED_TYPE_JSON_C,
+                            idpsToJsonCB, NULL);
+    afb_type_add_convert_from(fedUserIdpsObjType, AFB_PREDEFINED_TYPE_JSON_C,
+                              idpsFromJsonCB, NULL);
+
 
     initialized = 1;
     return 0;
 
 OnErrorExit:
-    return 1;
+    return -1;
 }
