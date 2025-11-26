@@ -22,9 +22,9 @@
  */
 #define _GNU_SOURCE
 
-
 #include <stdio.h>
 #include <string.h>
+
 #include <json-c/json.h>
 #include <rp-utils/rp-jsonc.h>
 
@@ -38,46 +38,51 @@
 #include "fedid-types/fedid-types.h"
 #include "sqldb-glue/sqldb-glue.h"
 
-static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
-  static int count = 0;
-  int rc;
-  char *response;
-  afb_data_t reply;
+static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[])
+{
+    static int count = 0;
+    int rc;
+    char *response;
+    afb_data_t reply;
 
-  count++;
-  AFB_REQ_DEBUG(request, "idp:fedPing count=%d", count);
-  rc = asprintf(&response, "Pong=%d", count);
-  if (rc >= 0)
-    rc = afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, response, (size_t)(rc + 1), free, response);
-  if (rc < 0)
-    afb_req_reply(request, AFB_ERRNO_OUT_OF_MEMORY, 0, NULL);
-  else
-    afb_req_reply(request, 0, 1, &reply);
+    count++;
+    AFB_REQ_DEBUG(request, "idp:fedPing count=%d", count);
+    rc = asprintf(&response, "Pong=%d", count);
+    if (rc >= 0)
+        rc = afb_create_data_raw(&reply, AFB_PREDEFINED_TYPE_STRINGZ, response,
+                                 (size_t)(rc + 1), free, response);
+    if (rc < 0)
+        afb_req_reply(request, AFB_ERRNO_OUT_OF_MEMORY, 0, NULL);
+    else
+        afb_req_reply(request, 0, 1, &reply);
 }
 
 // Retrieve list of federated IDPs for a given pseudo/email
-static void fedSocialIdps(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+static void fedSocialIdps(afb_req_t request,
+                          unsigned argc,
+                          afb_data_t const argv[])
+{
     afb_data_t argd[argc];
     const char *email, *pseudo;
     afb_data_t reply[1];
     int err, count;
 
-    const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
-    err= afb_data_array_convert (argc, argv, argt, argd);
+    const afb_type_t argt[] = {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
+    err = afb_data_array_convert(argc, argv, argt, argd);
     if (err < 0) {
-        argd[0]=NULL;
+        argd[0] = NULL;
         goto OnErrorExit;
     };
 
-    json_object *queryJ=  afb_data_ro_pointer(argd[0]);
-    err=  rp_jsonc_unpack (queryJ, "{s?s s?s}"
-        ,"email", &email
-        ,"pseudo", &pseudo
-    );
-    if (err < 0) goto OnErrorExit;
+    json_object *queryJ = afb_data_ro_pointer(argd[0]);
+    err = rp_jsonc_unpack(queryJ, "{s?s s?s}", "email", &email, "pseudo",
+                          &pseudo);
+    if (err < 0)
+        goto OnErrorExit;
 
-    count= sqlUserLinkIdps (request, pseudo, email, reply);
-    if (count <= 0) goto OnErrorExit;
+    count = sqlUserLinkIdps(request, pseudo, email, reply);
+    if (count <= 0)
+        goto OnErrorExit;
 
     afb_req_reply(request, count, 1, reply);
     afb_data_array_unref(argc, argd);
@@ -85,21 +90,27 @@ static void fedSocialIdps(afb_req_t request, unsigned argc, afb_data_t const arg
 
 OnErrorExit:
     afb_req_reply(request, FEDID_ERROR, 0, NULL);
-    if (argd[0]) afb_data_array_unref(argc, argd);
+    if (argd[0])
+        afb_data_array_unref(argc, argd);
 }
 
 // Retrieve list of federated IDPs for a given pseudo/email
-static void fedUserExist(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+static void fedUserExist(afb_req_t request,
+                         unsigned argc,
+                         afb_data_t const argv[])
+{
     afb_data_t argd[argc];
     int err;
 
-    const afb_type_t argt[]= {fedUserObjType, FEDID_TRAILER};
-    err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) goto OnErrorExit;
+    const afb_type_t argt[] = {fedUserObjType, FEDID_TRAILER};
+    err = afb_data_array_convert(argc, argv, argt, argd);
+    if (err < 0)
+        goto OnErrorExit;
 
-    fedUserRawT *fedUser= afb_data_ro_pointer(argd[0]);
-    err= sqlUserExist (request, fedUser->pseudo, fedUser->email);
-    if (err < 0) goto OnErrorExit;
+    fedUserRawT *fedUser = afb_data_ro_pointer(argd[0]);
+    err = sqlUserExist(request, fedUser->pseudo, fedUser->email);
+    if (err < 0)
+        goto OnErrorExit;
 
     afb_req_reply(request, err, 0, NULL);
     afb_data_array_unref(argc, argd);
@@ -107,27 +118,31 @@ static void fedUserExist(afb_req_t request, unsigned argc, afb_data_t const argv
 
 OnErrorExit:
     afb_req_reply(request, FEDID_ERROR, 0, NULL);
-    if (argd[0]) afb_data_array_unref(argc, argd);
+    if (argd[0])
+        afb_data_array_unref(argc, argd);
 }
 
-static void fedUserAttr(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+static void fedUserAttr(afb_req_t request,
+                        unsigned argc,
+                        afb_data_t const argv[])
+{
     afb_data_t argd[argc];
     const char *label, *value;
     int err;
 
-    const afb_type_t argt[]= {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
-    err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) goto OnErrorExit;
+    const afb_type_t argt[] = {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
+    err = afb_data_array_convert(argc, argv, argt, argd);
+    if (err < 0)
+        goto OnErrorExit;
 
-    json_object *queryJ=  afb_data_ro_pointer(argd[0]);
-    err=  rp_jsonc_unpack (queryJ, "{ss ss}"
-        ,"label", &label
-        ,"value", &value
-    );
-    if (err < 0) goto OnErrorExit;
+    json_object *queryJ = afb_data_ro_pointer(argd[0]);
+    err = rp_jsonc_unpack(queryJ, "{ss ss}", "label", &label, "value", &value);
+    if (err < 0)
+        goto OnErrorExit;
 
-    err= sqlUserAttrCheck (request, label, value);
-    if (err < 0) goto OnErrorExit;
+    err = sqlUserAttrCheck(request, label, value);
+    if (err < 0)
+        goto OnErrorExit;
 
     afb_req_reply(request, err, 0, NULL);
     afb_data_array_unref(argc, argd);
@@ -135,27 +150,34 @@ static void fedUserAttr(afb_req_t request, unsigned argc, afb_data_t const argv[
 
 OnErrorExit:
     afb_req_reply(request, FEDID_ERROR, 0, NULL);
-    if (argd[0]) afb_data_array_unref(argc, argd);
+    if (argd[0])
+        afb_data_array_unref(argc, argd);
 }
 
 // Create a new user profil and link it to its social id
-static void fedUserRegister(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+static void fedUserRegister(afb_req_t request,
+                            unsigned argc,
+                            afb_data_t const argv[])
+{
     afb_data_t argd[argc];
     int err;
 
     // make sure we get right input parameters types
-    if (argc != 2) goto OnErrorExit;
+    if (argc != 2)
+        goto OnErrorExit;
 
-    const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILER};
-    err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) goto OnErrorExit;
+    const afb_type_t argt[] = {fedUserObjType, fedSocialObjType, FEDID_TRAILER};
+    err = afb_data_array_convert(argc, argv, argt, argd);
+    if (err < 0)
+        goto OnErrorExit;
 
     // extract raw object from argv
-    fedUserRawT *fedUser= afb_data_ro_pointer(argd[0]);
-    fedSocialRawT *fedSocial= afb_data_ro_pointer(argd[1]);
+    fedUserRawT *fedUser = afb_data_ro_pointer(argd[0]);
+    fedSocialRawT *fedSocial = afb_data_ro_pointer(argd[1]);
 
-    err= sqlRegisterFromSocial (request, fedSocial, fedUser);
-    if (err < 0) goto OnErrorExit;
+    err = sqlRegisterFromSocial(request, fedSocial, fedUser);
+    if (err < 0)
+        goto OnErrorExit;
 
     afb_req_reply(request, err, 0, NULL);
     afb_data_array_unref(argc, argd);
@@ -163,27 +185,34 @@ static void fedUserRegister(afb_req_t request, unsigned argc, afb_data_t const a
 
 OnErrorExit:
     afb_req_reply(request, -1, 0, NULL);
-    if (argd[0]) afb_data_array_unref(argc, argd);
+    if (argd[0])
+        afb_data_array_unref(argc, argd);
 }
 
 // Link a social account with an existing federated user
-static void fedUserFederate(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
+static void fedUserFederate(afb_req_t request,
+                            unsigned argc,
+                            afb_data_t const argv[])
+{
     afb_data_t argd[argc];
     int err;
 
     // make sure we get right input parameters types
-    if (argc != 2) goto OnErrorExit;
+    if (argc != 2)
+        goto OnErrorExit;
 
-    const afb_type_t argt[]= {fedUserObjType,  fedSocialObjType, FEDID_TRAILER};
-    err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) goto OnErrorExit;
+    const afb_type_t argt[] = {fedUserObjType, fedSocialObjType, FEDID_TRAILER};
+    err = afb_data_array_convert(argc, argv, argt, argd);
+    if (err < 0)
+        goto OnErrorExit;
 
     // extract raw object from argv
-    fedUserRawT *fedUser= afb_data_ro_pointer(argd[0]);
-    fedSocialRawT *fedSocial= afb_data_ro_pointer(argd[1]);
+    fedUserRawT *fedUser = afb_data_ro_pointer(argd[0]);
+    fedSocialRawT *fedSocial = afb_data_ro_pointer(argd[1]);
 
-    err= sqlFederateFromSocial (request, fedSocial, fedUser);
-    if (err < 0) goto OnErrorExit;
+    err = sqlFederateFromSocial(request, fedSocial, fedUser);
+    if (err < 0)
+        goto OnErrorExit;
 
     afb_req_reply(request, err, 0, NULL);
     afb_data_array_unref(argc, argd);
@@ -191,38 +220,51 @@ static void fedUserFederate(afb_req_t request, unsigned argc, afb_data_t const a
 
 OnErrorExit:
     afb_req_reply(request, -1, 0, NULL);
-    if (argd[0]) afb_data_array_unref(argc, argd);
+    if (argd[0])
+        afb_data_array_unref(argc, argd);
 }
 
 // check if social id is already present within federation table
-static void fedSocialCheck(afb_req_t request, unsigned argc, afb_data_t const argv[]) {
-    char *errorMsg= "[fed-social-check] fail to retreive fedUser from argv[0]";
+static void fedSocialCheck(afb_req_t request,
+                           unsigned argc,
+                           afb_data_t const argv[])
+{
+    char *errorMsg = "[fed-social-check] fail to retreive fedUser from argv[0]";
     int err;
     afb_data_t reply[1];
     afb_data_t argd[argc];
 
-    if (argc != 1) goto OnErrorExit;
+    if (argc != 1)
+        goto OnErrorExit;
 
-    const afb_type_t argt[]= {fedSocialObjType, FEDID_TRAILER};
-    err= afb_data_array_convert (argc, argv, argt, argd);
-    if (err < 0) goto OnErrorExit;
+    const afb_type_t argt[] = {fedSocialObjType, FEDID_TRAILER};
+    err = afb_data_array_convert(argc, argv, argt, argd);
+    if (err < 0)
+        goto OnErrorExit;
 
     // check if user exist
-    const fedSocialRawT *fedSocial= afb_data_ro_pointer(argv[0]);
-    int count= sqlQueryFromSocial (request, fedSocial, reply);
-    if (count < 0) goto OnErrorExit;
+    const fedSocialRawT *fedSocial = afb_data_ro_pointer(argv[0]);
+    int count = sqlQueryFromSocial(request, fedSocial, reply);
+    if (count < 0)
+        goto OnErrorExit;
 
     afb_req_reply(request, 0, count, reply);
     afb_data_array_unref(argc, argd);
     return;
 
 OnErrorExit:
-    afb_create_data_raw(&reply[0], AFB_PREDEFINED_TYPE_STRINGZ, errorMsg, strlen(errorMsg) + 1, NULL, NULL);
+    afb_create_data_raw(&reply[0], AFB_PREDEFINED_TYPE_STRINGZ, errorMsg,
+                        strlen(errorMsg) + 1, NULL, NULL);
     afb_req_reply(request, FEDID_ERROR, 1, reply);
-    if (argd[0]) afb_data_array_unref(argc, argd);
+    if (argd[0])
+        afb_data_array_unref(argc, argd);
 }
 
-static int fedCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdata) {
+static int fedCtrl(afb_api_t api,
+                   afb_ctlid_t ctlid,
+                   afb_ctlarg_t ctlarg,
+                   void *userdata)
+{
     char *response;
     int err;
 
@@ -231,21 +273,22 @@ static int fedCtrl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *
         AFB_NOTICE("unexpected root entry");
         break;
 
-
     case afb_ctlid_Pre_Init:
         afb_api_provide_class(api, "identity");
 
         json_object *configJ = ctlarg->pre_init.config;
-        const char *dbpath= FEDID_SQLLITE_PATH;
-        if (configJ)  rp_jsonc_unpack (configJ, "{ss}", "dbpath", &dbpath);
+        const char *dbpath = FEDID_SQLLITE_PATH;
+        if (configJ)
+            rp_jsonc_unpack(configJ, "{ss}", "dbpath", &dbpath);
 
         err = sqlCreate(dbpath, &response);
         if (err) {
-            AFB_ERROR("[sql-backend fail] Fail to create/connect on sqlbackend");
+            AFB_ERROR(
+                "[sql-backend fail] Fail to create/connect on sqlbackend");
             goto OnErrorExit;
         }
 
-        err= fedUserObjTypesRegister();
+        err = fedUserObjTypesRegister();
         if (err) {
             AFB_ERROR("[register-type fail] Fail to register fed type");
             goto OnErrorExit;
@@ -279,20 +322,36 @@ OnErrorExit:
     return 1;
 }
 
+// clang-format off
 static const afb_verb_t verbs[] = {
-      {.verb = "ping", .callback = fedPing},
-      {.verb = "user-create", .callback = fedUserRegister, .info="federate a new user from a new social ID"},
-      {.verb = "user-federate", .callback = fedUserFederate, .info="federate two social ID into one signed federated user"},
-      {.verb = "user-check", .callback = fedUserAttr, .info="check is a given attribute email,pseudo exist in DB"},
-      {.verb = "user-exist", .callback = fedUserExist, .info="check is any of pseudo/email is already federated"},
-      {.verb = "social-check", .callback = fedSocialCheck, .info="check if a social user is already registered"},
-      {.verb = "social-idps", .callback = fedSocialIdps, .info="retrieve existing federated IDPs for a given user"},
-      {.verb = NULL}};
-
-const afb_binding_t afbBindingExport = {
-      .api = "fedid",
-      .specification = "Federated Identity handling with an SQLlite backend",
-      .verbs = verbs,
-      .mainctl = fedCtrl,
+    {.verb = "ping",
+     .callback = fedPing,
+     .info = "ping pong check"},
+    {.verb = "user-create",
+     .callback = fedUserRegister,
+     .info = "federate a new user from a new social ID"},
+    {.verb = "user-federate",
+     .callback = fedUserFederate,
+     .info = "federate two social ID into one signed federated user"},
+    {.verb = "user-check",
+     .callback = fedUserAttr,
+     .info = "check is a given attribute email,pseudo exist in DB"},
+    {.verb = "user-exist",
+     .callback = fedUserExist,
+     .info = "check is any of pseudo/email is already federated"},
+    {.verb = "social-check",
+     .callback = fedSocialCheck,
+     .info = "check if a social user is already registered"},
+    {.verb = "social-idps",
+     .callback = fedSocialIdps,
+     .info = "retrieve existing federated IDPs for a given user"},
+    {.verb = NULL}
 };
 
+const afb_binding_t afbBindingExport = {
+    .api = "fedid",
+    .specification = "Federated Identity handling with an SQLlite backend",
+    .verbs = verbs,
+    .mainctl = fedCtrl,
+};
+// clang-format on

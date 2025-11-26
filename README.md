@@ -15,8 +15,15 @@ sec-gate-fedid-binding can be used in standalone to provide a simple secure HTML
 
 ![fedid-biding-html5](docs/assets/sec-gate-fedid-binding-dirconf.jpg)
 
+## Reformating code
 
-Fulup notes:
+```
+find src -name '*.[ch]' | xargs clang-format -i
+```
+
+
+## Fulup notes:
+
  * si double click sur login alors on popup pour logout ou annulation
  
  * si federate on ajoute un link de fedsocial de plus
@@ -26,4 +33,5 @@ Fulup notes:
 
  * prevoir une double authentification (oidc + badge)
 
- * ajouter un timeout sur les session par profil 
+ * ajouter un timeout sur les session par profil
+

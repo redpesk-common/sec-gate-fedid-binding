@@ -19,7 +19,7 @@
  *  General Public License requirements will be met
  *  https://www.gnu.org/licenses/gpl-3.0.html.
  * $RP_END_LICENSE$
-*/
+ */
 #pragma once
 
 #define AFB_BINDING_VERSION 4
@@ -27,12 +27,23 @@
 
 #include "../fedid-types/fedid-types.h"
 
-typedef int (*sqlQueryCbT)(void*,int,char**,char**);
+typedef int (*sqlQueryCbT)(void *, int, char **, char **);
 
 int sqlCreate(const char *dbpath, char **response);
-int sqlQueryFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, afb_data_t *response);
-int sqlRegisterFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser);
-int sqlUserAttrCheck (afb_req_t request, const char* attrLabel, const char *attrValue);
-int sqlUserLinkIdps (afb_req_t request, const char* pseudo, const char* email, afb_data_t reply[]);
-int sqlFederateFromSocial (afb_req_t request, const fedSocialRawT *fedSocial, fedUserRawT *fedUser);
-int sqlUserExist (afb_req_t request, const char* pseudo, const char* email);
+int sqlQueryFromSocial(afb_req_t request,
+                       const fedSocialRawT *fedSocial,
+                       afb_data_t *response);
+int sqlRegisterFromSocial(afb_req_t request,
+                          const fedSocialRawT *fedSocial,
+                          fedUserRawT *fedUser);
+int sqlUserAttrCheck(afb_req_t request,
+                     const char *attrLabel,
+                     const char *attrValue);
+int sqlUserLinkIdps(afb_req_t request,
+                    const char *pseudo,
+                    const char *email,
+                    afb_data_t reply[]);
+int sqlFederateFromSocial(afb_req_t request,
+                          const fedSocialRawT *fedSocial,
+                          fedUserRawT *fedUser);
+int sqlUserExist(afb_req_t request, const char *pseudo, const char *email);

@@ -31,91 +31,120 @@
 #include <json-c/json.h>
 #include <rp-utils/rp-jsonc.h>
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
-afb_type_t fedUserObjType=NULL;
-afb_type_t fedSocialObjType=NULL;
-afb_type_t fedUserIdpsObjType=NULL;
+afb_type_t fedUserObjType = NULL;
+afb_type_t fedSocialObjType = NULL;
+afb_type_t fedUserIdpsObjType = NULL;
 
-void fedIdpsFreeCB (void *data) {
+void fedIdpsFreeCB(void *data)
+{
     assert(data != NULL);
 
-    char **idps= (char**)data;
+    char **idps = (char **)data;
 
-    for (int idx=0; idps[idx]; idx++) {
-        free (idps[idx]);
+    for (int idx = 0; idps[idx]; idx++) {
+        free(idps[idx]);
     }
-    free (idps);
+    free(idps);
 }
 
-void fedUserFreeCB (void *data) {
+void fedUserFreeCB(void *data)
+{
     assert(data != NULL);
 
-    fedUserRawT *fedUser= (fedUserRawT*)data;
+    fedUserRawT *fedUser = (fedUserRawT *)data;
     if (!fedUser->slave) {
-        if (fedUser->pseudo) free ((void*)fedUser->pseudo);
-        if (fedUser->email) free ((void*)fedUser->email);
-        if (fedUser->name) free ((void*)fedUser->name);
-        if (fedUser->avatar) free ((void*)fedUser->avatar);
-        if (fedUser->company) free ((void*)fedUser->company);
+        if (fedUser->pseudo)
+            free((void *)fedUser->pseudo);
+        if (fedUser->email)
+            free((void *)fedUser->email);
+        if (fedUser->name)
+            free((void *)fedUser->name);
+        if (fedUser->avatar)
+            free((void *)fedUser->avatar);
+        if (fedUser->company)
+            free((void *)fedUser->company);
     }
-    fedUser->slave=-1; // help debug
-    free (fedUser);
+    fedUser->slave = -1;  // help debug
+    free(fedUser);
 }
 
-void fedSocialFreeCB (void*ctx) {
+void fedSocialFreeCB(void *ctx)
+{
     assert(ctx != NULL);
 
-    fedSocialRawT *fedSocial= (fedSocialRawT*)ctx;
+    fedSocialRawT *fedSocial = (fedSocialRawT *)ctx;
     if (!fedSocial->slave) {
-        if (fedSocial->idp) free ((void*)  fedSocial->idp);
-        if (fedSocial->fedkey) free ((void*)  fedSocial->fedkey);
+        if (fedSocial->idp)
+            free((void *)fedSocial->idp);
+        if (fedSocial->fedkey)
+            free((void *)fedSocial->fedkey);
     }
-    fedSocial->slave=-1; // help debug
-    free (fedSocial);
+    fedSocial->slave = -1;  // help debug
+    free(fedSocial);
 }
 
-static int socialToJsonCB (void *ctx,  afb_data_t socialD, afb_type_t jsonT, afb_data_t *dest) {
+static int socialToJsonCB(void *ctx,
+                          afb_data_t socialD,
+                          afb_type_t jsonT,
+                          afb_data_t *dest)
+{
     json_object *socialJ;
-    const fedSocialRawT *fedSocial =  afb_data_ro_pointer(socialD);
+    const fedSocialRawT *fedSocial = afb_data_ro_pointer(socialD);
 
-    int err=  rp_jsonc_pack (&socialJ, "{ss ss si*}"
-        ,"idp", fedSocial->idp
-        ,"fedkey", fedSocial->fedkey
-        ,"stamp", fedSocial->stamp
-    );
-    if (err) goto OnErrorExit;
+    // clang-format off
+    int err = rp_jsonc_pack(&socialJ, "{ss ss si*}",
+                            "idp", fedSocial->idp,
+                            "fedkey", fedSocial->fedkey,
+                            "stamp", fedSocial->stamp);
+    // clang-format on
+    if (err)
+        goto OnErrorExit;
 
-    err= afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ, 0, (void*)json_object_put, socialJ);
-    if (err) goto OnErrorExit;
+    err = afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ, 0,
+                              (void *)json_object_put, socialJ);
+    if (err)
+        goto OnErrorExit;
     return 0;
 
 OnErrorExit:
     return -1;
 }
 
-static int socialFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t socialT, afb_data_t *dest) {
+static int socialFromJsonCB(void *ctx,
+                            afb_data_t jsonD,
+                            afb_type_t socialT,
+                            afb_data_t *dest)
+{
     int err;
 
-    // socialRaw depend on socialJson we have dest lock json object until raw object die.
-    fedSocialRawT *fedSocial= calloc (1, sizeof(fedSocialRawT));
+    // socialRaw depend on socialJson we have dest lock json object until raw
+    // object die.
+    fedSocialRawT *fedSocial = calloc(1, sizeof(fedSocialRawT));
 
-    err=  rp_jsonc_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?i}"
-        ,"fedkey", &fedSocial->fedkey
-        ,"idp", &fedSocial->idp
-        ,"stamp", &fedSocial->stamp
-    );
-    if (err) goto OnErrorExit;
+    // clang-format off
+    err = rp_jsonc_unpack((json_object *)afb_data_ro_pointer(jsonD),
+                          "{ss ss s?i}",
+                          "fedkey", &fedSocial->fedkey,
+                          "idp", &fedSocial->idp,
+                          "stamp", &fedSocial->stamp);
+    // clang-format on
+    if (err)
+        goto OnErrorExit;
 
-    err= afb_create_data_raw (dest, fedSocialObjType, fedSocial, 0, fedSocialFreeCB, fedSocial);
-    if (err) goto OnErrorExit;
+    err = afb_create_data_raw(dest, fedSocialObjType, fedSocial, 0,
+                              fedSocialFreeCB, fedSocial);
+    if (err)
+        goto OnErrorExit;
 
     // link json object with raw dependency
-    err= afb_data_dependency_add (*dest, jsonD);
-    if (err) goto OnErrorExit;
-    fedSocial->slave=1;
+    err = afb_data_dependency_add(*dest, jsonD);
+    if (err)
+        goto OnErrorExit;
+    fedSocial->slave = 1;
 
     return 0;
 
@@ -123,50 +152,69 @@ OnErrorExit:
     return -1;
 }
 
-static int userToJsonCB (void *ctx,  afb_data_t userD, afb_type_t jsonT, afb_data_t *dest) {
+static int userToJsonCB(void *ctx,
+                        afb_data_t userD,
+                        afb_type_t jsonT,
+                        afb_data_t *dest)
+{
     json_object *userJ;
-    const fedUserRawT *fedUser =  afb_data_ro_pointer(userD);
+    const fedUserRawT *fedUser = afb_data_ro_pointer(userD);
 
-    int err=  rp_jsonc_pack (&userJ, "{ss ss* ss* ss* ss* si}"
-        ,"pseudo", fedUser->pseudo
-        ,"email", fedUser->email
-        ,"name", fedUser->name
-        ,"avatar", fedUser->avatar
-        ,"company", fedUser->company
-        ,"stamp", fedUser->stamp
-    );
-    if (err) goto OnErrorExit;
+    // clang-format off
+    int err = rp_jsonc_pack(&userJ, "{ss ss* ss* ss* ss* si}",
+                            "pseudo", fedUser->pseudo,
+                            "email", fedUser->email,
+                            "name", fedUser->name,
+                            "avatar", fedUser->avatar,
+                            "company", fedUser->company,
+                            "stamp", fedUser->stamp);
+    // clang-format on
+    if (err)
+        goto OnErrorExit;
 
-    err= afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, userJ, 0, (void*)json_object_put, userJ);
-    if (err) goto OnErrorExit;
+    err = afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, userJ, 0,
+                              (void *)json_object_put, userJ);
+    if (err)
+        goto OnErrorExit;
     return 0;
 
 OnErrorExit:
     return -1;
 }
 
-static int userFromJsonCB (void *ctx,  afb_data_t jsonD, afb_type_t userT, afb_data_t *dest) {
+static int userFromJsonCB(void *ctx,
+                          afb_data_t jsonD,
+                          afb_type_t userT,
+                          afb_data_t *dest)
+{
     int err;
 
-    // userRaw depend on userJson we have dest lock json object until raw object die.
-    fedUserRawT *fedUser= calloc (1, sizeof(fedUserRawT));
+    // userRaw depend on userJson we have dest lock json object until raw object
+    // die.
+    fedUserRawT *fedUser = calloc(1, sizeof(fedUserRawT));
 
-    err=  rp_jsonc_unpack ((json_object*)afb_data_ro_pointer (jsonD), "{ss ss s?s s?s s?s}"
-        ,"pseudo", &fedUser->pseudo
-        ,"email", &fedUser->email
-        ,"name", &fedUser->name
-        ,"avatar", &fedUser->avatar
-        ,"company", &fedUser->company
-    );
-    if (err) goto OnErrorExit;
+    // clang-format off
+    err = rp_jsonc_unpack((json_object *)afb_data_ro_pointer(jsonD),
+                          "{ss ss s?s s?s s?s}",
+                          "pseudo", &fedUser->pseudo,
+                          "email", &fedUser->email,
+                          "name", &fedUser->name,
+                          "avatar", &fedUser->avatar,
+                          "company", &fedUser->company);
+    // clang-format on
+    if (err)
+        goto OnErrorExit;
 
-    err= afb_create_data_raw (dest, fedUserObjType, fedUser, 0, fedUserFreeCB, fedUser);
-    if (err) goto OnErrorExit;
+    err = afb_create_data_raw(dest, fedUserObjType, fedUser, 0, fedUserFreeCB,
+                              fedUser);
+    if (err)
+        goto OnErrorExit;
 
     // link json object with raw dependency
-    err= afb_data_dependency_add (*dest, jsonD);
-    fedUser->slave=1;
-    if (err) goto OnErrorExit;
+    err = afb_data_dependency_add(*dest, jsonD);
+    fedUser->slave = 1;
+    if (err)
+        goto OnErrorExit;
 
     return 0;
 
@@ -174,28 +222,40 @@ OnErrorExit:
     return -1;
 }
 
-int fedUserObjTypesRegister () {
-    static int initialized=0;
+int fedUserObjTypesRegister()
+{
+    static int initialized = 0;
     int err;
-    void *context=NULL;
+    void *context = NULL;
 
     // type should be loaded only once per binder
-    if (initialized) return 0;
+    if (initialized)
+        return 0;
 
-    err= afb_type_register(&fedSocialObjType, FEDSOCIAL_PROFIL_TYPE, 0 /* not opac */);
-    if (err) goto OnErrorExit;
-    afb_type_add_convert_to (fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialToJsonCB, context);
-    afb_type_add_convert_from (fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C, socialFromJsonCB, context);
+    err = afb_type_register(&fedSocialObjType, FEDSOCIAL_PROFIL_TYPE,
+                            0 /* not opac */);
+    if (err)
+        goto OnErrorExit;
+    afb_type_add_convert_to(fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C,
+                            socialToJsonCB, context);
+    afb_type_add_convert_from(fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C,
+                              socialFromJsonCB, context);
 
-    err= afb_type_register(&fedUserObjType, FEDUSER_PROFIL_TYPE, 0 /* not opac */);
-    if (err) goto OnErrorExit;
-    afb_type_add_convert_to (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userToJsonCB, context);
-    afb_type_add_convert_from (fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C, userFromJsonCB, context);
+    err = afb_type_register(&fedUserObjType, FEDUSER_PROFIL_TYPE,
+                            0 /* not opac */);
+    if (err)
+        goto OnErrorExit;
+    afb_type_add_convert_to(fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C,
+                            userToJsonCB, context);
+    afb_type_add_convert_from(fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C,
+                              userFromJsonCB, context);
 
-    err= afb_type_register(&fedUserIdpsObjType, FEDUSER_IDPS_LIST, 0 /* not opac */);
-    if (err) goto OnErrorExit;
+    err = afb_type_register(&fedUserIdpsObjType, FEDUSER_IDPS_LIST,
+                            0 /* not opac */);
+    if (err)
+        goto OnErrorExit;
 
-    initialized=1;
+    initialized = 1;
     return 0;
 
 OnErrorExit:

@@ -19,30 +19,31 @@
  *  General Public License requirements will be met
  *  https://www.gnu.org/licenses/gpl-3.0.html.
  * $RP_END_LICENSE$
-*/
+ */
 #pragma once
 
-#define FEDUSER_PROFIL_TYPE "feduser-profil"
+#define FEDUSER_PROFIL_TYPE   "feduser-profil"
 #define FEDSOCIAL_PROFIL_TYPE "fedsocial-profil"
-#define FEDUSER_IDPS_LIST "feduser-idps"
-#define FEDID_IDPS_MAX 10
+#define FEDUSER_IDPS_LIST     "feduser-idps"
+#define FEDID_IDPS_MAX        10
 
-#define FEDID_TRAILER  ((void*)-1)
+#define FEDID_TRAILER ((void *)-1)
 
 typedef enum {
-    FEDID_ERROR= -100,
-    FEDID_DONE=0,
+    FEDID_ERROR = -100,
+    FEDID_DONE = 0,
 
-    FEDID_USER_EXIST= 200,
-    FEDID_USER_UNKNOWN= 404,
-    FEDID_USER_REFUSED= 405,
+    FEDID_USER_EXIST = 200,
+    FEDID_USER_UNKNOWN = 404,
+    FEDID_USER_REFUSED = 405,
 
-    FEDID_ATTR_USED= 406,
-    FEDID_ATTR_FREE= 407,
+    FEDID_ATTR_USED = 406,
+    FEDID_ATTR_FREE = 407,
 
 } fedidStatusE;
 
-typedef struct {
+typedef struct
+{
     int slave;
     long stamp;
     const char *pseudo;
@@ -53,7 +54,8 @@ typedef struct {
     const char **attrs;
 } fedUserRawT;
 
-typedef struct {
+typedef struct
+{
     int slave;
     long stamp;
     const char *idp;
@@ -62,11 +64,11 @@ typedef struct {
     const char *idpsid;
 } fedSocialRawT;
 
-int fedUserObjTypesRegister ();
+int fedUserObjTypesRegister();
 extern afb_type_t fedUserObjType;
 extern afb_type_t fedSocialObjType;
 extern afb_type_t fedUserIdpsObjType;
 
-void fedUserFreeCB (void *fedUserRawT);
-void fedSocialFreeCB (void *fedSocialRawT);
-void fedIdpsFreeCB (void *idpList);
+void fedUserFreeCB(void *fedUserRawT);
+void fedSocialFreeCB(void *fedSocialRawT);
+void fedIdpsFreeCB(void *idpList);
