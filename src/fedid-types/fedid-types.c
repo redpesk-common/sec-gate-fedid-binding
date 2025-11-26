@@ -230,7 +230,7 @@ int fedUserObjTypesRegister()
     if (initialized)
         return 0;
 
-    err = afb_type_register(&fedSocialObjType, FEDSOCIAL_PROFIL_TYPE, 0);
+    err = afb_type_register(&fedSocialObjType, FEDSOCIAL_PROFIL_TYPENAME, 0);
     if (err)
         goto OnErrorExit;
     afb_type_add_convert_to(fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C,
@@ -238,7 +238,7 @@ int fedUserObjTypesRegister()
     afb_type_add_convert_from(fedSocialObjType, AFB_PREDEFINED_TYPE_JSON_C,
                               socialFromJsonCB, NULL);
 
-    err = afb_type_register(&fedUserObjType, FEDUSER_PROFIL_TYPE, 0);
+    err = afb_type_register(&fedUserObjType, FEDUSER_PROFIL_TYPENAME, 0);
     if (err)
         goto OnErrorExit;
     afb_type_add_convert_to(fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C,
@@ -246,7 +246,7 @@ int fedUserObjTypesRegister()
     afb_type_add_convert_from(fedUserObjType, AFB_PREDEFINED_TYPE_JSON_C,
                               userFromJsonCB, NULL);
 
-    err = afb_type_register(&fedUserIdpsObjType, FEDUSER_IDPS_LIST, 0);
+    err = afb_type_register(&fedUserIdpsObjType, FEDUSER_IDPS_LIST_TYPENAME, 0);
     if (err)
         goto OnErrorExit;
 
