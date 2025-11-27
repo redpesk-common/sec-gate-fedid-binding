@@ -28,24 +28,6 @@
 #define FEDSOCIAL_PROFIL_TYPENAME  "fedsocial-profil"
 #define FEDUSER_IDPS_LIST_TYPENAME "feduser-idps"
 
-#define FEDID_IDPS_MAX        10
-
-#define FEDID_TRAILER ((void *)-1)
-
-typedef enum {
-    FEDID_ERROR = -100,
-    FEDID_DONE = 0,
-
-    FEDID_USER_EXIST = 200,
-    FEDID_USER_UNKNOWN = 404,
-    FEDID_USER_REFUSED = 405,
-
-    FEDID_ATTR_USED = 406,
-    FEDID_ATTR_FREE = 407,
-
-} fedidStatusE;
-
-
 typedef struct
 {
     int slave;

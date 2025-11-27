@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define FEDID_IDPS_MAX  10
+
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
 #define MAX_QUERIES 3
@@ -118,11 +120,11 @@ int sqlUserAttrCheck(afb_req_t request,
     // select should return one or no row
     switch (sqlite3_step(queryRqt)) {
     case SQLITE_DONE:
-        status = FEDID_ATTR_FREE;
+        status = 0;
         break;
 
     case SQLITE_ROW:
-        status = FEDID_ATTR_USED;
+        status = 1;
         break;
 
     default:
@@ -159,11 +161,11 @@ int sqlUserExist(afb_req_t request, const char *pseudo, const char *email)
     // select should return one or no row
     switch (sqlite3_step(queryRqt)) {
     case SQLITE_DONE:
-        status = FEDID_ATTR_FREE;
+        status = 0;
         break;
 
     case SQLITE_ROW:
-        status = FEDID_ATTR_USED;
+        status = 1;
         break;
 
     default:
