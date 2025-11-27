@@ -309,7 +309,7 @@ int sqlQueryFromSocial(afb_req_t request,
         break;
 
     case SQLITE_ROW:
-        // user already exist retreive stored profil
+        // user already exist retrieve stored profil
         colCount = sqlite3_column_count(queryRqt);
         if (colCount != 5)
             goto OnErrorExit;
@@ -348,7 +348,7 @@ OnErrorExit:
     return -1;
 }
 
-// retreive IDP list from a feduser email or pseudo
+// retrieve IDP list from a feduser email or pseudo
 int sqlUserLinkIdps(afb_req_t request,
                     const char *pseudo,
                     const char *email,
