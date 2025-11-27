@@ -81,8 +81,7 @@ static void fedSocialIdps(afb_req_t request,
 
     // extract email and pseudo
     email = pseudo = NULL;
-    err = rp_jsonc_unpack(obj, "{s?s s?s}", "email", &email, "pseudo",
-                          &pseudo);
+    err = rp_jsonc_unpack(obj, "{s?s s?s}", "email", &email, "pseudo", &pseudo);
     if (err < 0)
         goto end;
 
@@ -221,7 +220,6 @@ static void fedUserFederate(afb_req_t request,
 end:
     afb_req_reply(request, status, 0, NULL);
 }
-
 
 // check if social id is already present within federation table
 static void fedSocialCheck(afb_req_t request,

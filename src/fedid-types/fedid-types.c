@@ -36,8 +36,8 @@ afb_type_t fedSocialObjType = NULL;
 afb_type_t fedUserIdpsObjType = NULL;
 
 /*******************************************************
-* fedSocial
-*******************************************************/
+ * fedSocial
+ *******************************************************/
 void fedSocialFree(fedSocialRawT *fedSocial)
 {
     if (fedSocial != NULL) {
@@ -121,8 +121,8 @@ OnErrorExit:
 }
 
 /*******************************************************
-* fedUser
-*******************************************************/
+ * fedUser
+ *******************************************************/
 void fedUserFree(fedUserRawT *fedUser)
 {
     if (fedUser != NULL) {
@@ -215,8 +215,8 @@ OnErrorExit:
 }
 
 /*******************************************************
-* fedIdps
-*******************************************************/
+ * fedIdps
+ *******************************************************/
 void fedIdpsFree(const char **fedIdps)
 {
     if (fedIdps != NULL) {
@@ -232,7 +232,7 @@ static int idpsToJsonCB(void *ctx,
                         afb_type_t jsonT,
                         afb_data_t *dest)
 {
-        int err;
+    int err;
     json_object *obj, *str;
     const char **idps = afb_data_ro_pointer(ipdsD);
 
@@ -243,10 +243,10 @@ static int idpsToJsonCB(void *ctx,
 
     // fill the array
     while (*idps) {
-            str = json_object_new_string(*idps++);
-            if (str == NULL)
-                goto OnErrorExitClean;
-            json_object_array_add(obj, str);
+        str = json_object_new_string(*idps++);
+        if (str == NULL)
+            goto OnErrorExitClean;
+        json_object_array_add(obj, str);
     }
 
     // makes the data
@@ -285,7 +285,7 @@ static int idpsFromJsonCB(void *ctx,
         goto OnErrorExit;
 
     // fill the idps list with copies
-    while(count) {
+    while (count) {
         str = json_object_array_get_idx(obj, --count);
         if (!json_object_is_type(obj, json_type_string))
             goto OnErrorExit;
@@ -308,8 +308,8 @@ OnErrorExit:
 }
 
 /*******************************************************
-* Registering
-*******************************************************/
+ * Registering
+ *******************************************************/
 int fedUserObjTypesRegister()
 {
     static int initialized = 0;
@@ -342,7 +342,6 @@ int fedUserObjTypesRegister()
                             idpsToJsonCB, NULL);
     afb_type_add_convert_from(fedUserIdpsObjType, AFB_PREDEFINED_TYPE_JSON_C,
                               idpsFromJsonCB, NULL);
-
 
     initialized = 1;
     return 0;
