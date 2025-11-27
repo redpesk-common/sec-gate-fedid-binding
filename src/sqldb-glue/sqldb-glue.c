@@ -33,7 +33,6 @@
 
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
-#define MAX_QUERIES 3
 
 const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     "CREATE TABLE fed_users"
@@ -70,16 +69,6 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     ");";
 // end sqlSchema
 
-void sqlFree(void *object)
-{
-    assert(object != NULL);
-    sqlite3_free(object);
-}
-
-long sqlLastRow(void)
-{
-    return sqlite3_last_insert_rowid(dbFd);
-}
 
 typedef struct
 {
