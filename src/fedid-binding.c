@@ -63,96 +63,95 @@ static void fedSocialIdps(afb_req_t request,
                           unsigned argc,
                           afb_data_t const argv[])
 {
-    afb_data_t argd[argc];
+    afb_data_t data;
     const char *email, *pseudo;
-    afb_data_t reply[1];
-    int err, count;
+    afb_data_t reply;
+    int err, count, status = AFB_ERRNO_INVALID_REQUEST;
+    json_object *obj;
 
-    const afb_type_t argt[] = {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
-    err = afb_data_array_convert(argc, argv, argt, argd);
-    if (err < 0) {
-        argd[0] = NULL;
-        goto OnErrorExit;
-    };
+    // check argument count
+    if (argc != 1)
+        goto end;
 
-    json_object *queryJ = afb_data_ro_pointer(argd[0]);
-    err = rp_jsonc_unpack(queryJ, "{s?s s?s}", "email", &email, "pseudo",
+    // get object of request
+    err = afb_req_param_convert(request, 0, AFB_PREDEFINED_TYPE_JSON_C, &data);
+    if (err < 0)
+        goto end;
+    obj = afb_data_ro_pointer(data);
+
+    // extract email and pseudo
+    email = pseudo = NULL;
+    err = rp_jsonc_unpack(obj, "{s?s s?s}", "email", &email, "pseudo",
                           &pseudo);
     if (err < 0)
-        goto OnErrorExit;
+        goto end;
 
-    count = sqlUserLinkIdps(request, pseudo, email, reply);
-    if (count <= 0)
-        goto OnErrorExit;
+    // get the idps
+    count = sqlUserLinkIdps(request, pseudo, email, &reply);
+    status = count >= 0 ? count : AFB_ERRNO_INTERNAL_ERROR;
 
-    afb_req_reply(request, count, 1, reply);
-    afb_data_array_unref(argc, argd);
+end:
+    afb_req_reply(request, status, status >= 0, &reply);
     return;
-
-OnErrorExit:
-    afb_req_reply(request, FEDID_ERROR, 0, NULL);
-    if (argd[0])
-        afb_data_array_unref(argc, argd);
 }
 
-// Retrieve list of federated IDPs for a given pseudo/email
+// test if a user exists
 static void fedUserExist(afb_req_t request,
                          unsigned argc,
                          afb_data_t const argv[])
 {
-    afb_data_t argd[argc];
-    int err;
+    fedUserRawT *fedUser;
+    afb_data_t data;
+    int err, status = AFB_ERRNO_INVALID_REQUEST;
 
-    const afb_type_t argt[] = {fedUserObjType, FEDID_TRAILER};
-    err = afb_data_array_convert(argc, argv, argt, argd);
+    // check argument count
+    if (argc != 1)
+        goto end;
+
+    // get fedUser of request
+    err = afb_req_param_convert(request, 0, fedUserObjType, &data);
     if (err < 0)
-        goto OnErrorExit;
+        goto end;
+    fedUser = afb_data_ro_pointer(data);
 
-    fedUserRawT *fedUser = afb_data_ro_pointer(argd[0]);
+    // perform the query
     err = sqlUserExist(request, fedUser->pseudo, fedUser->email);
-    if (err < 0)
-        goto OnErrorExit;
+    status = err < 0 ? AFB_ERRNO_INTERNAL_ERROR : err;
 
-    afb_req_reply(request, err, 0, NULL);
-    afb_data_array_unref(argc, argd);
-    return;
-
-OnErrorExit:
-    afb_req_reply(request, FEDID_ERROR, 0, NULL);
-    if (argd[0])
-        afb_data_array_unref(argc, argd);
+end:
+    afb_req_reply(request, status, 0, NULL);
 }
 
 static void fedUserAttr(afb_req_t request,
                         unsigned argc,
                         afb_data_t const argv[])
 {
-    afb_data_t argd[argc];
+    afb_data_t data;
     const char *label, *value;
-    int err;
+    json_object *obj;
+    int err, status = AFB_ERRNO_INVALID_REQUEST;
 
-    const afb_type_t argt[] = {AFB_PREDEFINED_TYPE_JSON_C, FEDID_TRAILER};
-    err = afb_data_array_convert(argc, argv, argt, argd);
+    // check argument count
+    if (argc != 1)
+        goto end;
+
+    // get object of request
+    err = afb_req_param_convert(request, 0, AFB_PREDEFINED_TYPE_JSON_C, &data);
     if (err < 0)
-        goto OnErrorExit;
+        goto end;
+    obj = afb_data_ro_pointer(data);
 
-    json_object *queryJ = afb_data_ro_pointer(argd[0]);
-    err = rp_jsonc_unpack(queryJ, "{ss ss}", "label", &label, "value", &value);
+    // extract label and value
+    err = rp_jsonc_unpack(obj, "{ss ss}", "label", &label, "value", &value);
     if (err < 0)
-        goto OnErrorExit;
+        goto end;
 
+    // perform the query
     err = sqlUserAttrCheck(request, label, value);
-    if (err < 0)
-        goto OnErrorExit;
+    status = err >= 0 ? err : AFB_ERRNO_INTERNAL_ERROR;
 
-    afb_req_reply(request, err, 0, NULL);
-    afb_data_array_unref(argc, argd);
-    return;
-
-OnErrorExit:
-    afb_req_reply(request, FEDID_ERROR, 0, NULL);
-    if (argd[0])
-        afb_data_array_unref(argc, argd);
+end:
+    afb_req_reply(request, status, 0, NULL);
 }
 
 // Create a new user profil and link it to its social id
@@ -160,34 +159,33 @@ static void fedUserRegister(afb_req_t request,
                             unsigned argc,
                             afb_data_t const argv[])
 {
-    afb_data_t argd[argc];
-    int err;
+    afb_data_t data;
+    fedUserRawT *fedUser;
+    fedSocialRawT *fedSocial;
+    int err, status = AFB_ERRNO_INVALID_REQUEST;
 
     // make sure we get right input parameters types
     if (argc != 2)
-        goto OnErrorExit;
+        goto end;
 
-    const afb_type_t argt[] = {fedUserObjType, fedSocialObjType, FEDID_TRAILER};
-    err = afb_data_array_convert(argc, argv, argt, argd);
+    // get fedUser
+    err = afb_req_param_convert(request, 0, fedUserObjType, &data);
     if (err < 0)
-        goto OnErrorExit;
+        goto end;
+    fedUser = afb_data_ro_pointer(data);
 
-    // extract raw object from argv
-    fedUserRawT *fedUser = afb_data_ro_pointer(argd[0]);
-    fedSocialRawT *fedSocial = afb_data_ro_pointer(argd[1]);
+    // get fedSocial
+    err = afb_req_param_convert(request, 1, fedSocialObjType, &data);
+    if (err < 0)
+        goto end;
+    fedSocial = afb_data_ro_pointer(data);
 
+    // register now
     err = sqlRegisterFromSocial(request, fedSocial, fedUser);
-    if (err < 0)
-        goto OnErrorExit;
+    status = err >= 0 ? err : AFB_ERRNO_INTERNAL_ERROR;
 
-    afb_req_reply(request, err, 0, NULL);
-    afb_data_array_unref(argc, argd);
-    return;
-
-OnErrorExit:
-    afb_req_reply(request, -1, 0, NULL);
-    if (argd[0])
-        afb_data_array_unref(argc, argd);
+end:
+    afb_req_reply(request, status, 0, NULL);
 }
 
 // Link a social account with an existing federated user
@@ -195,70 +193,66 @@ static void fedUserFederate(afb_req_t request,
                             unsigned argc,
                             afb_data_t const argv[])
 {
-    afb_data_t argd[argc];
-    int err;
+    afb_data_t data;
+    fedUserRawT *fedUser;
+    fedSocialRawT *fedSocial;
+    int err, status = AFB_ERRNO_INVALID_REQUEST;
 
     // make sure we get right input parameters types
     if (argc != 2)
-        goto OnErrorExit;
+        goto end;
 
-    const afb_type_t argt[] = {fedUserObjType, fedSocialObjType, FEDID_TRAILER};
-    err = afb_data_array_convert(argc, argv, argt, argd);
+    // get fedUser
+    err = afb_req_param_convert(request, 0, fedUserObjType, &data);
     if (err < 0)
-        goto OnErrorExit;
+        goto end;
+    fedUser = afb_data_ro_pointer(data);
 
-    // extract raw object from argv
-    fedUserRawT *fedUser = afb_data_ro_pointer(argd[0]);
-    fedSocialRawT *fedSocial = afb_data_ro_pointer(argd[1]);
+    // get fedSocial
+    err = afb_req_param_convert(request, 1, fedSocialObjType, &data);
+    if (err < 0)
+        goto end;
+    fedSocial = afb_data_ro_pointer(data);
 
+    // register now
     err = sqlFederateFromSocial(request, fedSocial, fedUser);
-    if (err < 0)
-        goto OnErrorExit;
+    status = err >= 0 ? err : AFB_ERRNO_INTERNAL_ERROR;
 
-    afb_req_reply(request, err, 0, NULL);
-    afb_data_array_unref(argc, argd);
-    return;
-
-OnErrorExit:
-    afb_req_reply(request, -1, 0, NULL);
-    if (argd[0])
-        afb_data_array_unref(argc, argd);
+end:
+    afb_req_reply(request, status, 0, NULL);
 }
+
 
 // check if social id is already present within federation table
 static void fedSocialCheck(afb_req_t request,
                            unsigned argc,
                            afb_data_t const argv[])
 {
-    char *errorMsg = "[fed-social-check] fail to retreive fedUser from argv[0]";
-    int err;
-    afb_data_t reply[1];
-    afb_data_t argd[argc];
+    afb_data_t data, reply;
+    fedSocialRawT *fedSocial;
+    int err, count = 0, status = AFB_ERRNO_INVALID_REQUEST;
 
+    // make sure we get right input parameters types
     if (argc != 1)
-        goto OnErrorExit;
+        goto end;
 
-    const afb_type_t argt[] = {fedSocialObjType, FEDID_TRAILER};
-    err = afb_data_array_convert(argc, argv, argt, argd);
+    // get fedSocial
+    err = afb_req_param_convert(request, 0, fedSocialObjType, &data);
     if (err < 0)
-        goto OnErrorExit;
+        goto end;
+    fedSocial = afb_data_ro_pointer(data);
 
-    // check if user exist
-    const fedSocialRawT *fedSocial = afb_data_ro_pointer(argv[0]);
-    int count = sqlQueryFromSocial(request, fedSocial, reply);
-    if (count < 0)
-        goto OnErrorExit;
+    // register now
+    err = sqlQueryFromSocial(request, fedSocial, &reply);
+    if (err < 0)
+        status = AFB_ERRNO_INTERNAL_ERROR;
+    else {
+        count = err;
+        status = 0;
+    }
 
-    afb_req_reply(request, 0, count, reply);
-    afb_data_array_unref(argc, argd);
-    return;
-
-OnErrorExit:
-    afb_create_data_raw(&reply[0], AFB_PREDEFINED_TYPE_STRINGZ, errorMsg,
-                        strlen(errorMsg) + 1, NULL, NULL);
-    afb_req_reply(request, FEDID_ERROR, 1, reply);
-    if (argd[0])
-        afb_data_array_unref(argc, argd);
+end:
+    afb_req_reply(request, status, count, &reply);
 }
 
 static int fedCtrl(afb_api_t api,
