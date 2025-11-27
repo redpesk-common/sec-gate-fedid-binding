@@ -51,21 +51,6 @@ const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     " ,'tstamp' integer"
     " ,'userid' INT UNSIGNED NOT NULL REFERENCES fed_users('rowid')"
     " ,UNIQUE ('idp', 'fedkey')"
-    ");"
-    "CREATE TABLE fed_label"
-    "('label_uid' text NOT NULL"
-    " ,'secret' text"
-    " ,'epoc_create' integer"
-    " ,'epoc_start'  integer"
-    " ,'epoc_stop'   integer"
-    " ,'count_max'   integer"
-    " ,'count_used'  integer"
-    " ,UNIQUE ('label_uid')"
-    ");"
-    "CREATE TABLE fed_user_label"
-    " ('user'  INT UNSIGNED NOT NULL REFERENCES fed_users('id')"
-    " ,'label' INT UNSIGNED NOT NULL REFERENCES fed_label('id')"
-    " ,UNIQUE ('user', 'label')"
     ");";
 // end sqlSchema
 
