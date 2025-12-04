@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-2021 IoT.bzh Company
- * Author "Fulup Ar Foll"
+ * Author <dev-team@iot.bzh>
  *
  * $RP_BEGIN_LICENSE$
  * Commercial License Usage
@@ -22,16 +22,14 @@
  */
 #pragma once
 
-#include <afb/afb-binding.h>
+#include <stdint.h>
 
-#define FEDUSER_PROFIL_TYPENAME    "feduser-profil"
-#define FEDSOCIAL_PROFIL_TYPENAME  "fedsocial-profil"
-#define FEDUSER_IDPS_LIST_TYPENAME "feduser-idps"
+struct json_object;
 
 typedef struct
 {
-    int slave;
-    long stamp;
+    unsigned refcount;
+    int64_t stamp;
     const char *pseudo;
     const char *name;
     const char *email;
@@ -42,19 +40,24 @@ typedef struct
 
 typedef struct
 {
-    int slave;
-    long stamp;
+    unsigned refcount;
+    int64_t stamp;
     const char *idp;
     const char *fedkey;
     const char **attrs;
     const char *idpsid;
 } fedSocialRawT;
 
-int fedUserObjTypesRegister();
-extern afb_type_t fedUserObjType;
-extern afb_type_t fedSocialObjType;
-extern afb_type_t fedUserIdpsObjType;
+fedUserRawT *fedUserCreate(const char *pseudo, const char *email, const char *name, const char *avatar, const char *company, int64_t stamp);
+fedUserRawT *fedUserAddRef(fedUserRawT *fedUser);
+void fedUserUnRef(fedUserRawT *fedUser);
+fedUserRawT *fedUserFromJSON(struct json_object *obj);
+struct json_object *fedUserToJSON(const fedUserRawT *fedUser);
 
-void fedUserFree(fedUserRawT *fedUser);
-void fedSocialFree(fedSocialRawT *fedSocial);
+fedSocialRawT *fedSocialCreate(const char *idp, const char *fedkey, int64_t stamp);
+fedSocialRawT *fedSocialAddRef(fedSocialRawT *fedSocial);
+void fedSocialUnRef(fedSocialRawT *fedSocial);
+fedSocialRawT *fedSocialFromJSON(struct json_object *obj);
+struct json_object *fedSocialToJSON(const fedSocialRawT *fedSocial);
+
 void fedIdpsFree(const char **fedIds);

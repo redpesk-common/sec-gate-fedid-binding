@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../fedid-types/fedid-types-glue.h"
+
 #define FEDID_IDPS_MAX  10
 
 // binding share a unique sqllite db with all clients

@@ -32,6 +32,7 @@
 #include <afb/afb-binding.h>
 
 #include "fedid-types/fedid-types.h"
+#include "fedid-types/fedid-types-glue.h"
 #include "sqldb-glue/sqldb-glue.h"
 
 #if !defined(FEDID_SQLLITE_PATH)
