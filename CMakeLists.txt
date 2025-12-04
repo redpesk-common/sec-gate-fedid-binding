@@ -19,7 +19,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(
 	fedid
-	VERSION 2.0.0
+	VERSION 2.0.1
 	DESCRIPTION "Bind federated social identity with a local user identity"
 	HOMEPAGE_URL "https://github.com/iotbzh/sec-gate-fedid-binding"
 	LANGUAGES C
