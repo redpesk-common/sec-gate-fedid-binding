@@ -48,13 +48,20 @@ typedef struct
     const char *idpsid;
 } fedSocialRawT;
 
-fedUserRawT *fedUserCreate(const char *pseudo, const char *email, const char *name, const char *avatar, const char *company, int64_t stamp);
+fedUserRawT *fedUserCreate(const char *pseudo,
+                           const char *email,
+                           const char *name,
+                           const char *avatar,
+                           const char *company,
+                           int64_t stamp);
 fedUserRawT *fedUserAddRef(fedUserRawT *fedUser);
 void fedUserUnRef(fedUserRawT *fedUser);
 fedUserRawT *fedUserFromJSON(struct json_object *obj);
 struct json_object *fedUserToJSON(const fedUserRawT *fedUser);
 
-fedSocialRawT *fedSocialCreate(const char *idp, const char *fedkey, int64_t stamp);
+fedSocialRawT *fedSocialCreate(const char *idp,
+                               const char *fedkey,
+                               int64_t stamp);
 fedSocialRawT *fedSocialAddRef(fedSocialRawT *fedSocial);
 void fedSocialUnRef(fedSocialRawT *fedSocial);
 fedSocialRawT *fedSocialFromJSON(struct json_object *obj);

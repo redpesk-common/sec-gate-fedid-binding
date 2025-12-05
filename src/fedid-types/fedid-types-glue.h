@@ -29,4 +29,3 @@ int fedUserObjTypesRegister();
 extern afb_type_t fedUserObjType;
 extern afb_type_t fedSocialObjType;
 extern afb_type_t fedUserIdpsObjType;
-

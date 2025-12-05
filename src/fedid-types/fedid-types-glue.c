@@ -25,8 +25,8 @@
 #define AFB_BINDING_NO_ROOT
 #define AFB_BINDING_VERSION 4
 
-#include "fedid-types.h"
 #include "fedid-types-glue.h"
+#include "fedid-types.h"
 
 #include <string.h>
 
@@ -44,16 +44,17 @@ afb_type_t fedUserIdpsObjType = NULL;
  * fedUser
  *******************************************************/
 static int userToJsonCB(void *ctx,
-                          afb_data_t socialD,
-                          afb_type_t jsonT,
-                          afb_data_t *dest)
+                        afb_data_t socialD,
+                        afb_type_t jsonT,
+                        afb_data_t *dest)
 {
     const fedUserRawT *fedUser = afb_data_ro_pointer(socialD);
-    json_object *socialJ = fedUserToJSON(fedUser);;
+    json_object *socialJ = fedUserToJSON(fedUser);
+    ;
     if (socialJ != NULL) {
-        if (0 == afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ, 0,
-                              (void *)json_object_put, socialJ))
-           return 0;
+        if (0 == afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ,
+                                     0, (void *)json_object_put, socialJ))
+            return 0;
         json_object_put(socialJ);
     }
     *dest = NULL;
@@ -61,15 +62,15 @@ static int userToJsonCB(void *ctx,
 }
 
 static int userFromJsonCB(void *ctx,
-                            afb_data_t jsonD,
-                            afb_type_t socialT,
-                            afb_data_t *dest)
+                          afb_data_t jsonD,
+                          afb_type_t socialT,
+                          afb_data_t *dest)
 {
     json_object *obj = (json_object *)afb_data_ro_pointer(jsonD);
     fedUserRawT *fedUser = fedUserFromJSON(obj);
     if (fedUser != NULL) {
         if (0 == afb_create_data_raw(dest, fedUserObjType, fedUser, 0,
-                              (void *)fedUserUnRef, fedUser))
+                                     (void *)fedUserUnRef, fedUser))
             return 0;
         fedUserUnRef(fedUser);
     }
@@ -86,11 +87,12 @@ static int socialToJsonCB(void *ctx,
                           afb_data_t *dest)
 {
     const fedSocialRawT *fedSocial = afb_data_ro_pointer(socialD);
-    json_object *socialJ = fedSocialToJSON(fedSocial);;
+    json_object *socialJ = fedSocialToJSON(fedSocial);
+    ;
     if (socialJ != NULL) {
-        if (0 == afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ, 0,
-                              (void *)json_object_put, socialJ))
-           return 0;
+        if (0 == afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ,
+                                     0, (void *)json_object_put, socialJ))
+            return 0;
         json_object_put(socialJ);
     }
     *dest = NULL;
@@ -106,7 +108,7 @@ static int socialFromJsonCB(void *ctx,
     fedSocialRawT *fedSocial = fedSocialFromJSON(obj);
     if (fedSocial != NULL) {
         if (0 == afb_create_data_raw(dest, fedSocialObjType, fedSocial, 0,
-                              (void *)fedSocialUnRef, fedSocial))
+                                     (void *)fedSocialUnRef, fedSocial))
             return 0;
         fedSocialUnRef(fedSocial);
     }
