@@ -22,28 +22,15 @@
  */
 #pragma once
 
-#define AFB_BINDING_VERSION 4
-#include <afb/afb-binding.h>
-
 #include "../fedid-types/fedid-types.h"
 
-typedef int (*sqlQueryCbT)(void *, int, char **, char **);
-
 int sqlCreate(const char *dbpath, char **response);
-int sqlQueryFromSocial(afb_req_t request,
-                       const fedSocialRawT *fedSocial,
-                       afb_data_t *response);
-int sqlRegisterFromSocial(afb_req_t request,
-                          const fedSocialRawT *fedSocial,
-                          fedUserRawT *fedUser);
-int sqlUserAttrCheck(afb_req_t request,
-                     const char *attrLabel,
-                     const char *attrValue);
-int sqlUserLinkIdps(afb_req_t request,
-                    const char *pseudo,
-                    const char *email,
-                    afb_data_t reply[]);
-int sqlFederateFromSocial(afb_req_t request,
-                          const fedSocialRawT *fedSocial,
-                          fedUserRawT *fedUser);
-int sqlUserExist(afb_req_t request, const char *pseudo, const char *email);
+int sqlQueryFromSocial(const fedSocialRawT *fedSocial, fedUserRawT **fedUser);
+int sqlRegisterFromSocial(const fedSocialRawT *fedSocial,
+                          const fedUserRawT *fedUser);
+int sqlUserAttrCheck(const char *attrLabel, const char *attrValue);
+int sqlUserLinkIdps(const char *pseudo, const char *email, char ***fedIdps);
+int sqlFederateFromSocial(const fedSocialRawT *fedSocial,
+                          const fedUserRawT *fedUser);
+int sqlUserExist(const char *pseudo, const char *email);
+const char *sqlLastErrorMessage();

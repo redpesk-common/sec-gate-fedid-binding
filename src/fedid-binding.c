@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-2025 IoT.bzh Company
- * Author "Fulup Ar Foll"
+ * Author <dev-team@iot.bzh>
  *
  * $RP_BEGIN_LICENSE$
  * Commercial License Usage
@@ -31,14 +31,21 @@
 #define AFB_BINDING_VERSION 4
 #include <afb/afb-binding.h>
 
-#include "fedid-types/fedid-types.h"
 #include "fedid-types/fedid-types-glue.h"
+#include "fedid-types/fedid-types.h"
 #include "sqldb-glue/sqldb-glue.h"
 
 #if !defined(FEDID_SQLLITE_PATH)
 #define FEDID_SQLLITE_PATH "/tmp/fedid.db"
 #endif
 
+static int reportSqlError(afb_req_t request, int rc, const char *info)
+{
+    if (rc == -1)
+        return AFB_ERRNO_OUT_OF_MEMORY;
+    AFB_REQ_ERROR(request, "[SQL:%s] %s", info ?: "?", sqlLastErrorMessage());
+    return AFB_ERRNO_INTERNAL_ERROR;
+}
 
 static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[])
 {
@@ -66,6 +73,7 @@ static void fedSocialIdps(afb_req_t request,
 {
     afb_data_t data;
     const char *email, *pseudo;
+    char **fedIdps;
     afb_data_t reply;
     int err, count, status = AFB_ERRNO_INVALID_REQUEST;
     json_object *obj;
@@ -87,12 +95,20 @@ static void fedSocialIdps(afb_req_t request,
         goto end;
 
     // get the idps
-    count = sqlUserLinkIdps(request, pseudo, email, &reply);
-    status = count >= 0 ? count : AFB_ERRNO_INTERNAL_ERROR;
+    count = sqlUserLinkIdps(pseudo, email, &fedIdps);
+    if (count < 0)
+        status = reportSqlError(request, count, "sqlUserLinkIdps");
+    else {
+        err = afb_create_data_raw(&reply, fedUserIdpsObjType, fedIdps, 0,
+                                  (void *)fedIdpsFree, fedIdps);
+        if (err < 0)
+            status = AFB_ERRNO_OUT_OF_MEMORY;
+        else
+            status = count;
+    }
 
 end:
     afb_req_reply(request, status, status >= 0, &reply);
-    return;
 }
 
 // test if a user exists
@@ -115,8 +131,8 @@ static void fedUserExist(afb_req_t request,
     fedUser = afb_data_ro_pointer(data);
 
     // perform the query
-    err = sqlUserExist(request, fedUser->pseudo, fedUser->email);
-    status = err < 0 ? AFB_ERRNO_INTERNAL_ERROR : err;
+    err = sqlUserExist(fedUser->pseudo, fedUser->email);
+    status = err >= 0 ? err : reportSqlError(request, err, "sqlUserExist");
 
 end:
     afb_req_reply(request, status, 0, NULL);
@@ -147,8 +163,8 @@ static void fedUserAttr(afb_req_t request,
         goto end;
 
     // perform the query
-    err = sqlUserAttrCheck(request, label, value);
-    status = err >= 0 ? err : AFB_ERRNO_INTERNAL_ERROR;
+    err = sqlUserAttrCheck(label, value);
+    status = err >= 0 ? err : reportSqlError(request, err, "sqlUserAttrCheck");
 
 end:
     afb_req_reply(request, status, 0, NULL);
@@ -181,8 +197,9 @@ static void fedUserRegister(afb_req_t request,
     fedSocial = afb_data_ro_pointer(data);
 
     // register now
-    err = sqlRegisterFromSocial(request, fedSocial, fedUser);
-    status = err >= 0 ? err : AFB_ERRNO_INTERNAL_ERROR;
+    err = sqlRegisterFromSocial(fedSocial, fedUser);
+    status =
+        err >= 0 ? err : reportSqlError(request, err, "sqlRegisterFromSocial");
 
 end:
     afb_req_reply(request, status, 0, NULL);
@@ -215,8 +232,9 @@ static void fedUserFederate(afb_req_t request,
     fedSocial = afb_data_ro_pointer(data);
 
     // register now
-    err = sqlFederateFromSocial(request, fedSocial, fedUser);
-    status = err >= 0 ? err : AFB_ERRNO_INTERNAL_ERROR;
+    err = sqlFederateFromSocial(fedSocial, fedUser);
+    status =
+        err >= 0 ? err : reportSqlError(request, err, "sqlFederateFromSocial");
 
 end:
     afb_req_reply(request, status, 0, NULL);
@@ -229,6 +247,7 @@ static void fedSocialCheck(afb_req_t request,
 {
     afb_data_t data, reply;
     fedSocialRawT *fedSocial;
+    fedUserRawT *fedUser;
     int err, count = 0, status = AFB_ERRNO_INVALID_REQUEST;
 
     // make sure we get right input parameters types
@@ -242,12 +261,19 @@ static void fedSocialCheck(afb_req_t request,
     fedSocial = afb_data_ro_pointer(data);
 
     // register now
-    err = sqlQueryFromSocial(request, fedSocial, &reply);
+    err = sqlQueryFromSocial(fedSocial, &fedUser);
     if (err < 0)
-        status = AFB_ERRNO_INTERNAL_ERROR;
+        status = reportSqlError(request, err, "sqlQueryFromSocial");
     else {
-        count = err;
         status = 0;
+        if (err > 0) {
+            err = afb_create_data_raw(&reply, fedUserObjType, fedUser, 0,
+                                      (void *)fedUserUnRef, fedUser);
+            if (err < 0)
+                status = AFB_ERRNO_OUT_OF_MEMORY;
+            else
+                count = 1;
+        }
     }
 
 end:
