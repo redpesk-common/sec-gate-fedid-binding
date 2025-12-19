@@ -66,6 +66,17 @@ static void fedPing(afb_req_t request, unsigned argc, afb_data_t const argv[])
         afb_req_reply(request, 0, 1, &reply);
 }
 
+/*
+ * Implement verb "social-idps-check"
+ *
+ * Receive a JSON object with one or both of the fields: pseudo and email
+ *
+ * Look in the database for a user matching pseudo/email
+ * and if found, returns the list of the IDP linked to that user.
+ *
+ * Return in status the count of listed IDP.
+ * A negative status indicates an error.
+ */
 // Retrieve list of federated IDPs for a given pseudo/email
 static void fedSocialIdps(afb_req_t request,
                           unsigned argc,
@@ -138,6 +149,17 @@ end:
     afb_req_reply(request, status, 0, NULL);
 }
 
+/*
+ * Implement verb "user-check"
+ *
+ * Receive a JSON object with 2 fields: label and value
+ *
+ * Checks in the table of users if an entry exists with the given
+ * value.
+ *
+ * Return the status 1 if an entry is found or the status 0 otherwise.
+ * A negative status indicates an error.
+ */
 static void fedUserAttr(afb_req_t request,
                         unsigned argc,
                         afb_data_t const argv[])
@@ -205,7 +227,17 @@ end:
     afb_req_reply(request, status, 0, NULL);
 }
 
-// Link a social account with an existing federated user
+/*
+ * Link a social account with an existing federated user
+ * Associates an existing user to a new social identity
+ *
+ * Takes 2 parameters:
+ *  1. the user (at least the mail and pseudo)
+ *  2. the sociality: idp and fedkey of the user for the idp
+ *
+ * Adds the sociality for the user.
+ * Returns 0 on success or else a negative status
+ */
 static void fedUserFederate(afb_req_t request,
                             unsigned argc,
                             afb_data_t const argv[])
@@ -240,7 +272,22 @@ end:
     afb_req_reply(request, status, 0, NULL);
 }
 
-// check if social id is already present within federation table
+/*
+ * check if social id is already present within federation table
+ *
+ * Takes one paramater of type fedSocial or a JSON object like
+ * { idp, fedkey }
+ *
+ * Query the database for a record holding a such item.
+ * When a such record exists and a user matching that record exists,
+ * returns the fields associated with the user as a fedUser type.
+ *
+ * The returned status can be:
+ *  1 - the user is returned in associated data
+ *  0 - no such user
+ *  AFB_ERRNO_OUT_OF_MEMORY
+ *  AFB_ERRNO_INTERNAL_ERROR
+ */
 static void fedSocialCheck(afb_req_t request,
                            unsigned argc,
                            afb_data_t const argv[])
@@ -358,7 +405,7 @@ static const afb_verb_t verbs[] = {
 
 const afb_binding_t afbBindingExport = {
     .api = "fedid",
-    .specification = "Federated Identity handling with an SQLlite backend",
+    .info = "Federated Identity handling with an SQLlite backend",
     .verbs = verbs,
     .mainctl = fedCtrl,
     .provide_class = "identity",
