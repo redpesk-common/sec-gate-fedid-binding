@@ -1,0 +1,29 @@
+{
+   "$schema": "urn:redpesk:schema:desc-api:1",
+   "name":"fedid",
+   "info":"Federated Identity handling with an SQLlite backend",
+   "verbs":[
+      {
+         "name":"ping",
+         "info":"ping pong check"
+      },{
+         "name":"user-create",
+         "info":"federate a new user from a new social ID"
+      },{
+         "name":"user-federate",
+         "info":"federate two social ID into one signed federated user"
+      },{
+         "name":"user-check",
+         "info":"check is a given attribute email,pseudo exist in DB"
+      },{
+         "name":"user-exist",
+         "info":"check is any of pseudo/email is already federated"
+      },{
+         "name":"social-check",
+         "info":"check if a social user is already registered"
+      },{
+         "name":"social-idps",
+         "info":"retrieve existing federated IDPs for a given user"
+      }]
+}
+
