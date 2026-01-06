@@ -45,7 +45,6 @@ typedef struct
     const char *idp;
     const char *fedkey;
     const char **attrs;
-    const char *idpsid;
 } fedSocialRawT;
 
 fedUserRawT *fedUserCreate(const char *pseudo,
