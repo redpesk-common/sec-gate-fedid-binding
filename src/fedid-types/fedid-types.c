@@ -30,6 +30,19 @@
 #include <rp-utils/rp-jsonc.h>
 
 /*******************************************************
+ * free string array
+ *******************************************************/
+static void freeStringArray(const char **array)
+{
+    if (array != NULL) {
+        const char **iter = array;
+        while (*iter != NULL)
+            free((void *)(*iter++));
+        free(array);
+    }
+}
+
+/*******************************************************
  * fedUser
  *******************************************************/
 fedUserRawT *fedUserAddRef(fedUserRawT *fedUser)
@@ -47,6 +60,7 @@ void fedUserUnRef(fedUserRawT *fedUser)
         free((void *)fedUser->name);
         free((void *)fedUser->avatar);
         free((void *)fedUser->company);
+        freeStringArray(fedUser->attrs);
         free(fedUser);
     }
 }
@@ -119,6 +133,7 @@ void fedSocialUnRef(fedSocialRawT *fedSocial)
         !__atomic_sub_fetch(&fedSocial->refcount, 1, __ATOMIC_RELAXED)) {
         free((void *)fedSocial->idp);
         free((void *)fedSocial->fedkey);
+        freeStringArray(fedSocial->attrs);
         free(fedSocial);
     }
 }
@@ -167,10 +182,5 @@ struct json_object *fedSocialToJSON(const fedSocialRawT *fedSocial)
  *******************************************************/
 void fedIdpsFree(const char **fedIdps)
 {
-    if (fedIdps != NULL) {
-        const char **iter = fedIdps;
-        while (*iter != NULL)
-            free((void *)(*iter++));
-        free(fedIdps);
-    }
+    freeStringArray(fedIdps);
 }
