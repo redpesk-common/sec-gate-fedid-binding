@@ -62,12 +62,13 @@ fedUserRawT *fedUserCreate(const char *pseudo,
     if (fedUser != NULL) {
         fedUser->refcount = 1;
         fedUser->stamp = stamp;
-        fedUser->pseudo = strdup(pseudo);
-        fedUser->email = strdup(email);
+        fedUser->pseudo = pseudo == NULL ? NULL : strdup(pseudo);
+        fedUser->email = email == NULL ? NULL : strdup(email);
         fedUser->name = name == NULL ? NULL : strdup(name);
         fedUser->avatar = avatar == NULL ? NULL : strdup(avatar);
         fedUser->company = company == NULL ? NULL : strdup(company);
-        if (fedUser->pseudo == NULL || fedUser->email == NULL ||
+        if ((pseudo != NULL && fedUser->pseudo == NULL) ||
+            (email != NULL && fedUser->email == NULL) ||
             (name != NULL && fedUser->name == NULL) ||
             (avatar != NULL && fedUser->avatar == NULL) ||
             (company != NULL && fedUser->company == NULL)) {
@@ -80,10 +81,11 @@ fedUserRawT *fedUserCreate(const char *pseudo,
 
 fedUserRawT *fedUserFromJSON(struct json_object *obj)
 {
+    int rc;
     fedUserRawT fedUser;
     memset(&fedUser, 0, sizeof fedUser);
-    int rc = rp_jsonc_unpack(
-        obj, "{ss ss s?s s?s s?s s?I}", "pseudo", &fedUser.pseudo, "email",
+    rc = rp_jsonc_unpack(
+        obj, "{s?s s?s s?s s?s s?s s?I}", "pseudo", &fedUser.pseudo, "email",
         &fedUser.email, "name", &fedUser.name, "avatar", &fedUser.avatar,
         "company", &fedUser.company, "stamp", &fedUser.stamp);
     return rc ? NULL
@@ -93,8 +95,9 @@ fedUserRawT *fedUserFromJSON(struct json_object *obj)
 
 struct json_object *fedUserToJSON(const fedUserRawT *fedUser)
 {
+    int rc;
     json_object *obj;
-    int rc = rp_jsonc_pack(&obj, "{ss ss ss* ss* ss* sI}", "pseudo",
+    rc = rp_jsonc_pack(&obj, "{ss* ss* ss* ss* ss* sI}", "pseudo",
                            fedUser->pseudo, "email", fedUser->email, "name",
                            fedUser->name, "avatar", fedUser->avatar, "company",
                            fedUser->company, "stamp", fedUser->stamp);
@@ -128,9 +131,10 @@ fedSocialRawT *fedSocialCreate(const char *idp,
     if (fedSocial != NULL) {
         fedSocial->refcount = 1;
         fedSocial->stamp = stamp;
-        fedSocial->idp = strdup(idp);
-        fedSocial->fedkey = strdup(fedkey);
-        if (fedSocial->idp == NULL || fedSocial->fedkey == NULL) {
+        fedSocial->idp = idp == NULL ? NULL : strdup(idp);
+        fedSocial->fedkey = fedkey == NULL ? NULL : strdup(fedkey);
+        if ((idp != NULL && fedSocial->idp == NULL) ||
+            (fedkey != NULL && fedSocial->fedkey == NULL)) {
             fedSocialUnRef(fedSocial);
             fedSocial = NULL;
         }
@@ -144,15 +148,16 @@ fedSocialRawT *fedSocialFromJSON(json_object *obj)
     int64_t stamp = 0;
     int rc;
 
-    rc = rp_jsonc_unpack(obj, "{ss ss s?I}", "idp", &idp, "fedkey", &fedkey,
+    rc = rp_jsonc_unpack(obj, "{s?s s?s s?I}", "idp", &idp, "fedkey", &fedkey,
                          "stamp", &stamp);
     return rc ? NULL : fedSocialCreate(idp, fedkey, stamp);
 }
 
 struct json_object *fedSocialToJSON(const fedSocialRawT *fedSocial)
 {
+    int rc;
     json_object *obj;
-    int rc = rp_jsonc_pack(&obj, "{ss ss sI*}", "idp", fedSocial->idp, "fedkey",
+    rc = rp_jsonc_pack(&obj, "{ss* ss* sI*}", "idp", fedSocial->idp, "fedkey",
                            fedSocial->fedkey, "stamp", fedSocial->stamp);
     return rc ? NULL : obj;
 }
