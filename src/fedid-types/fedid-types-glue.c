@@ -50,7 +50,6 @@ static int userToJsonCB(void *ctx,
 {
     const fedUserRawT *fedUser = afb_data_ro_pointer(socialD);
     json_object *socialJ = fedUserToJSON(fedUser);
-    ;
     if (socialJ != NULL) {
         if (0 == afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ,
                                      0, (void *)json_object_put, socialJ))
@@ -88,7 +87,6 @@ static int socialToJsonCB(void *ctx,
 {
     const fedSocialRawT *fedSocial = afb_data_ro_pointer(socialD);
     json_object *socialJ = fedSocialToJSON(fedSocial);
-    ;
     if (socialJ != NULL) {
         if (0 == afb_create_data_raw(dest, AFB_PREDEFINED_TYPE_JSON_C, socialJ,
                                      0, (void *)json_object_put, socialJ))
@@ -127,6 +125,10 @@ static int idpsToJsonCB(void *ctx,
     int err;
     json_object *obj, *str;
     const char **idps = afb_data_ro_pointer(ipdsD);
+
+    // check input
+    if (idps == NULL)
+        goto OnErrorExit;
 
     // creates the array
     obj = json_object_new_array();
