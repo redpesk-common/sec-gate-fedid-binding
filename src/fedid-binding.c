@@ -318,8 +318,10 @@ static void fedSocialCheck(afb_req_t request,
                                       (void *)fedUserUnRef, fedUser);
             if (err < 0)
                 status = AFB_ERRNO_OUT_OF_MEMORY;
-            else
+            else {
+                status = 1;
                 count = 1;
+	    }
         }
     }
 
