@@ -32,9 +32,9 @@
 
 #include <json-c/json.h>
 
-#define FEDUSER_PROFIL_TYPENAME    "feduser-profil"
-#define FEDSOCIAL_PROFIL_TYPENAME  "fedsocial-profil"
-#define FEDUSER_IDPS_LIST_TYPENAME "feduser-idps"
+#define FEDUSER_PROFIL_TYPENAME    "fedid2-user"
+#define FEDSOCIAL_PROFIL_TYPENAME  "fedid2-social"
+#define FEDUSER_IDPS_LIST_TYPENAME "fedid2-idps"
 
 afb_type_t fedUserObjType = NULL;
 afb_type_t fedSocialObjType = NULL;
