@@ -38,6 +38,7 @@
 
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
+static char *lastError = NULL;
 
 static const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     "CREATE TABLE fed_users"
@@ -59,15 +60,15 @@ static const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     ");";
 // end sqlSchema
 
-typedef struct
+static void recordError()
 {
-    fedUserRawT user;
-    sqlite3_stmt *rqt;
-} sqlsqlCtxT;
+    free(lastError);
+    lastError = strdup(sqlite3_errmsg(dbFd));
+}
 
 const char *sqlLastErrorMessage()
 {
-    sqlite3_errmsg(dbFd);
+    return lastError != NULL ? lastError : "unknown error";
 }
 
 int sqlCreate(const char *dbpath, char **errorMsg)
@@ -94,6 +95,8 @@ int sqlCreate(const char *dbpath, char **errorMsg)
         PRINT("schema=%s\n",sqlSchema );
         rc = sqlite3_exec(dbFd, sqlSchema, NULL, 0, errorMsg);
         if (rc != SQLITE_OK) {
+            recordError();
+            sqlite3_close_v2(dbFd);
             remove(dbpath);
             goto OnExitError;
         }
@@ -103,7 +106,8 @@ int sqlCreate(const char *dbpath, char **errorMsg)
         sqlite3_close_v2(dbFd);
         rc = sqlite3_open_v2(dbpath, &dbFd, SQLITE_OPEN_READWRITE, NULL);
         if (rc != SQLITE_OK) {
-            asprintf(errorMsg, "Fail to create SQLlite dbfile=%s", dbpath);
+            recordError();
+            asprintf(errorMsg, "Fail to open SQLlite dbfile=%s", dbpath);
             goto OnExitError;
         }
     }
@@ -132,8 +136,10 @@ int sqlUserAttrCheck(const char *attrLabel, const char *attrValue)
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
     free(queryStr);
-    if (err != SQLITE_OK)
+    if (err != SQLITE_OK) {
+        recordError();
         return -2;
+    }
 
     // select should return one or no row
     switch (sqlite3_step(queryRqt)) {
@@ -146,6 +152,7 @@ int sqlUserAttrCheck(const char *attrLabel, const char *attrValue)
         break;
 
     default:
+        recordError();
         status = -2;
     }
     sqlite3_finalize(queryRqt);
@@ -170,8 +177,10 @@ int sqlUserExist(const char *pseudo, const char *email)
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
     free(queryStr);
-    if (err != SQLITE_OK)
+    if (err != SQLITE_OK) {
+        recordError();
         return -2;
+    }
 
     // select should return one or no row
     switch (sqlite3_step(queryRqt)) {
@@ -184,6 +193,7 @@ int sqlUserExist(const char *pseudo, const char *email)
         break;
 
     default:
+        recordError();
         status = -2;
         break;
     }
@@ -198,14 +208,19 @@ static int execCommands(char *commands)
     const char *pzTail = commands;
     while (*pzTail) {
         err = sqlite3_prepare_v3(dbFd, pzTail, -1, 0, &queryRqt, &pzTail);
-        if (err != SQLITE_OK)
+        if (err != SQLITE_OK) {
+            recordError();
             break;
+        }
         if (queryRqt != NULL) {
             err = sqlite3_step(queryRqt);
-            if (err != SQLITE_DONE)
+            if (err != SQLITE_DONE) {
+                recordError();
+                sqlite3_finalize(queryRqt);
                 break;
-            err = SQLITE_OK;
+            }
             sqlite3_finalize(queryRqt);
+            err = SQLITE_OK;
         }
     }
     free(commands);
@@ -279,8 +294,10 @@ int sqlQueryFromSocial(const fedSocialRawT *fedSocial, fedUserRawT **fedUser)
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
     free(queryStr);
-    if (err)
+    if (err != SQLITE_OK) {
+        recordError();
         return -2;
+    }
 
     // select should return one or no row
     count = -2;
@@ -313,6 +330,7 @@ int sqlQueryFromSocial(const fedSocialRawT *fedSocial, fedUserRawT **fedUser)
         break;
 
     default:
+        recordError();
         break;
     }
     sqlite3_finalize(queryRqt);
@@ -340,8 +358,10 @@ int sqlUserLinkIdps(const char *pseudo, const char *email, char ***fedIdps)
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
     free(queryStr);
-    if (err != SQLITE_OK)
-        return -1;
+    if (err != SQLITE_OK) {
+        recordError();
+        return -2;
+    }
 
     // first step, count the rows
     for (count = 0; sqlite3_step(queryRqt) == SQLITE_ROW; count++)
@@ -351,8 +371,10 @@ int sqlUserLinkIdps(const char *pseudo, const char *email, char ***fedIdps)
     idps = calloc(1 + count, sizeof(char *));
     if (idps == NULL)
         count = -1;
-    else if (sqlite3_reset(queryRqt) != SQLITE_OK)
+    else if (sqlite3_reset(queryRqt) != SQLITE_OK) {
+        recordError();
         count = -2;
+    }
     else {
         for (count = 0; sqlite3_step(queryRqt) == SQLITE_ROW; count++) {
             idps[count] = strdup((char *)sqlite3_column_text(queryRqt, 0));
