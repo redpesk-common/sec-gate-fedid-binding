@@ -30,6 +30,12 @@
 #include <string.h>
 #include <time.h>
 
+#if 0
+#define PRINT(...) fprintf(stderr, "[FEDID-DB] " __VA_ARGS__)
+#else
+#define PRINT(...)
+#endif
+
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
 
@@ -85,7 +91,7 @@ int sqlCreate(const char *dbpath, char **errorMsg)
         }
 
         // populate db schema into newly create db
-        // fprintf (stderr, "schema=%s\n",sqlSchema );
+        PRINT("schema=%s\n",sqlSchema );
         rc = sqlite3_exec(dbFd, sqlSchema, NULL, 0, errorMsg);
         if (rc != SQLITE_OK) {
             remove(dbpath);
@@ -121,6 +127,7 @@ int sqlUserAttrCheck(const char *attrLabel, const char *attrValue)
     int queryLen = asprintf(&queryStr, queryPattern, attrLabel, attrValue);
     if (queryLen < 0)
         return -1;
+    PRINT("[QUERY: %s]\n", queryStr);
 
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
@@ -158,6 +165,7 @@ int sqlUserExist(const char *pseudo, const char *email)
     int queryLen = asprintf(&queryStr, queryPattern, pseudo, email);
     if (queryLen < 0)
         return -1;
+    PRINT("[QUERY: %s]\n", queryStr);
 
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
@@ -221,8 +229,11 @@ int sqlRegisterFromSocial(const fedSocialRawT *fedSocial,
         asprintf(&queryStr, queryPattern, fedUser->pseudo, fedUser->email,
                  fedUser->name, fedUser->avatar, fedUser->company, timeStamp,
                  fedSocial->idp, fedSocial->fedkey, timeStamp);
+    if (queryLen < 0)
+        return -1;
+    PRINT("[QUERY: %s]\n", queryStr);
 
-    return queryLen < 0 ? -1 : execCommands(queryStr);
+    return execCommands(queryStr);
 }
 
 int sqlFederateFromSocial(const fedSocialRawT *fedSocial,
@@ -239,8 +250,11 @@ int sqlFederateFromSocial(const fedSocialRawT *fedSocial,
     int queryLen =
         asprintf(&queryStr, queryPattern, fedUser->email, fedUser->pseudo,
                  fedSocial->idp, fedSocial->fedkey, timeStamp);
+    if (queryLen < 0)
+        return -1;
+    PRINT("[QUERY: %s]\n", queryStr);
 
-    return queryLen < 0 ? -1 : execCommands(queryStr);
+    return execCommands(queryStr);
 }
 
 int sqlQueryFromSocial(const fedSocialRawT *fedSocial, fedUserRawT **fedUser)
@@ -260,6 +274,7 @@ int sqlQueryFromSocial(const fedSocialRawT *fedSocial, fedUserRawT **fedUser)
         asprintf(&queryStr, queryPattern, fedSocial->idp, fedSocial->fedkey);
     if (queryLen < 0)
         return -1;
+    PRINT("[QUERY: %s]\n", queryStr);
 
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
@@ -320,6 +335,7 @@ int sqlUserLinkIdps(const char *pseudo, const char *email, char ***fedIdps)
     int queryLen = asprintf(&queryStr, queryPattern, pseudo, email);
     if (queryLen < 0)
         return -1;
+    PRINT("[QUERY: %s]\n", queryStr);
 
     // compile request into byte code
     err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
