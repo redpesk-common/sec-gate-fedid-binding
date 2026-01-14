@@ -33,23 +33,23 @@
 // binding share a unique sqllite db with all clients
 static sqlite3 *dbFd = NULL;
 
-const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
+static const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     "CREATE TABLE fed_users"
     "('pseudo'  text NOT NULL"
-    " ,'email'   text NOT NULL"
-    " ,'name'  text"
-    " ,'avatar'  text"
-    " ,'company' text"
-    " ,'tstamp' integer"
-    " ,UNIQUE ('email')"
-    " ,UNIQUE ('pseudo')"
+    ",'email'   text NOT NULL"
+    ",'name'    text"
+    ",'avatar'  text"
+    ",'company' text"
+    ",'tstamp'  integer"
+    ",UNIQUE ('email')"
+    ",UNIQUE ('pseudo')"
     ");"
     "CREATE TABLE fed_keys"
-    "('idp' text NOT NULL"
-    " ,'fedkey' text NOT NULL"
-    " ,'tstamp' integer"
-    " ,'userid' INT UNSIGNED NOT NULL REFERENCES fed_users('rowid')"
-    " ,UNIQUE ('idp', 'fedkey')"
+    "('idp'    text NOT NULL"
+    ",'fedkey' text NOT NULL"
+    ",'tstamp' integer"
+    ",'userid' INT UNSIGNED NOT NULL REFERENCES fed_users('rowid')"
+    ",UNIQUE ('idp', 'fedkey')"
     ");";
 // end sqlSchema
 
@@ -111,7 +111,7 @@ OnExitError:
 int sqlUserAttrCheck(const char *attrLabel, const char *attrValue)
 {
     static char queryPattern[] =
-        " select rowid from fed_users"
+        "select rowid from fed_users"
         " where %s='%s'"
         ";";
 
@@ -148,7 +148,7 @@ int sqlUserAttrCheck(const char *attrLabel, const char *attrValue)
 int sqlUserExist(const char *pseudo, const char *email)
 {
     static char queryPattern[] =
-        " select rowid from fed_users"
+        "select rowid from fed_users"
         " where pseudo='%s' or email='%s'"
         ";";
 
@@ -208,11 +208,12 @@ int sqlRegisterFromSocial(const fedSocialRawT *fedSocial,
                           const fedUserRawT *fedUser)
 {
     static char queryPattern[] =
-        " insert into fed_users(pseudo,email,name,avatar,company, tstamp)"
-        " values('%s','%s','%s','%s','%s',%ld);"
-        " insert into fed_keys (userid, idp, fedkey, tstamp)"
-        " values(last_insert_rowid(),'%s','%s',%ld);"
-        "";
+        "insert into fed_users(pseudo,email,name,avatar,company, tstamp)"
+        " values('%s','%s','%s','%s','%s',%ld)"
+	";"
+        "insert into fed_keys (userid, idp, fedkey, tstamp)"
+        " values(last_insert_rowid(),'%s','%s',%ld)"
+        ";";
 
     unsigned long timeStamp = (unsigned long)time(NULL);
     char *queryStr;
@@ -228,10 +229,10 @@ int sqlFederateFromSocial(const fedSocialRawT *fedSocial,
                           const fedUserRawT *fedUser)
 {
     static char queryPattern[] =
-        " insert into fed_keys (userid, idp, fedkey, tstamp)"
-        " values((select rowid from fed_users where email='%s' and "
-        "pseudo='%s'),'%s','%s',%ld);"
-        "";
+        "insert into fed_keys (userid, idp, fedkey, tstamp)"
+        " values((select rowid from fed_users where email='%s'"
+        " or pseudo='%s'),'%s','%s',%ld)"
+        ";";
 
     unsigned long timeStamp = (unsigned long)time(NULL);
     char *queryStr;
@@ -245,8 +246,7 @@ int sqlFederateFromSocial(const fedSocialRawT *fedSocial,
 int sqlQueryFromSocial(const fedSocialRawT *fedSocial, fedUserRawT **fedUser)
 {
     static char queryPattern[] =
-        " select "
-        "usr.pseudo,usr.email,usr.name,usr.avatar,usr.company,usr.tstamp"
+        "select usr.pseudo,usr.email,usr.name,usr.avatar,usr.company,usr.tstamp"
         " from fed_users usr, fed_keys keys"
         " where keys.userid=usr.rowid"
         " and keys.idp='%s' and keys.fedkey='%s'"
@@ -308,9 +308,9 @@ int sqlQueryFromSocial(const fedSocialRawT *fedSocial, fedUserRawT **fedUser)
 int sqlUserLinkIdps(const char *pseudo, const char *email, char ***fedIdps)
 {
     static char queryPattern[] =
-        " select keys.idp from fed_keys keys where keys.userid = "
-        " (select rowid from fed_users usr where usr.pseudo='%s' or "
-        "usr.email='%s')"
+        "select keys.idp from fed_keys keys where keys.userid ="
+        " (select rowid from fed_users usr where usr.pseudo='%s'"
+        " or usr.email='%s')"
         ";";
 
     sqlite3_stmt *queryRqt;
