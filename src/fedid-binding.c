@@ -43,7 +43,7 @@ static int reportSqlError(afb_req_t request, int rc, const char *info)
 {
     if (rc == -1)
         return AFB_ERRNO_OUT_OF_MEMORY;
-    AFB_REQ_ERROR(request, "[SQL:%s] %s", info ?: "?", sqlLastErrorMessage());
+    AFB_REQ_ERROR(request, "[fedid] SQL %s, %s", info ?: "?", sqlLastErrorMessage());
     return AFB_ERRNO_INTERNAL_ERROR;
 }
 
@@ -321,7 +321,7 @@ static void fedSocialCheck(afb_req_t request,
             else {
                 status = 1;
                 count = 1;
-	    }
+            }
         }
     }
 
@@ -337,14 +337,14 @@ static int fedCtrl(afb_api_t api,
     switch (ctlid) {
     case afb_ctlid_Pre_Init: {
         const char *dbpath = FEDID_SQLLITE_PATH;
-        char *response;
+        char *report;
         int err;
         json_object *config, *item;
 
         /* register types */
         err = fedUserObjTypesRegister();
         if (err) {
-            AFB_ERROR("[register-type fail] Fail to register fed type");
+            AFB_ERROR("[fedid] Fail to register fed type");
             goto OnErrorExit;
         }
 
@@ -356,10 +356,9 @@ static int fedCtrl(afb_api_t api,
             dbpath = json_object_get_string(item);
 
         /* open db */
-        err = sqlCreate(dbpath, &response);
+        err = sqlCreate(dbpath, &report);
         if (err) {
-            AFB_ERROR(
-                "[sql-backend fail] Fail to create/connect on sqlbackend");
+            AFB_ERROR("[fedid] Can't connect to DB %s: %s", dbpath, report ?: "?");
             goto OnErrorExit;
         }
 

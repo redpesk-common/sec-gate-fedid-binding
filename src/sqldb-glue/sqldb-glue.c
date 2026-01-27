@@ -36,10 +36,6 @@
 #define PRINT(...)
 #endif
 
-// binding share a unique sqllite db with all clients
-static sqlite3 *dbFd = NULL;
-static char *lastError = NULL;
-
 static const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     "CREATE TABLE fed_users"
     "('pseudo'  text NOT NULL"
@@ -60,10 +56,19 @@ static const char *sqlSchema =  // check with 'sqlite3 /xxx/fedid.db .tables'
     ");";
 // end sqlSchema
 
-static void recordError()
+// binding share a unique sqllite db with all clients
+static sqlite3 *dbFd = NULL;
+static char *lastError = NULL;
+
+static void setLastError(const char *text)
 {
     free(lastError);
-    lastError = strdup(sqlite3_errmsg(dbFd));
+    lastError = text == NULL ? NULL : strdup(text);
+}
+
+static void recordError()
+{
+    setLastError(sqlite3_errmsg(dbFd));
 }
 
 const char *sqlLastErrorMessage()
@@ -74,6 +79,9 @@ const char *sqlLastErrorMessage()
 int sqlCreate(const char *dbpath, char **errorMsg)
 {
     int rc;
+    char *report;
+
+    *errorMsg = NULL;
 
     // db is already open
     if (dbFd)
@@ -87,15 +95,19 @@ int sqlCreate(const char *dbpath, char **errorMsg)
         rc = sqlite3_open_v2(dbpath, &dbFd,
                              SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
         if (rc != SQLITE_OK) {
-            asprintf(errorMsg, "Fail to create SQLlite dbfile=%s", dbpath);
+            asprintf(errorMsg, "Creation failed, %s", sqlite3_errstr(rc));
             goto OnExitError;
         }
 
         // populate db schema into newly create db
         PRINT("schema=%s\n",sqlSchema );
-        rc = sqlite3_exec(dbFd, sqlSchema, NULL, 0, errorMsg);
+        report = NULL;
+        rc = sqlite3_exec(dbFd, sqlSchema, NULL, 0, &report);
         if (rc != SQLITE_OK) {
-            recordError();
+            if (report != NULL) {
+                *errorMsg = strdup(report);
+                sqlite3_free(report);
+            }
             sqlite3_close_v2(dbFd);
             remove(dbpath);
             goto OnExitError;
@@ -106,8 +118,7 @@ int sqlCreate(const char *dbpath, char **errorMsg)
         sqlite3_close_v2(dbFd);
         rc = sqlite3_open_v2(dbpath, &dbFd, SQLITE_OPEN_READWRITE, NULL);
         if (rc != SQLITE_OK) {
-            recordError();
-            asprintf(errorMsg, "Fail to open SQLlite dbfile=%s", dbpath);
+            asprintf(errorMsg, "Opening failed, ", sqlite3_errstr(rc));
             goto OnExitError;
         }
     }
@@ -233,7 +244,7 @@ int sqlRegisterFromSocial(const fedSocialRawT *fedSocial,
     static char queryPattern[] =
         "insert into fed_users(pseudo,email,name,avatar,company, tstamp)"
         " values('%s','%s','%s','%s','%s',%ld)"
-	";"
+        ";"
         "insert into fed_keys (userid, idp, fedkey, tstamp)"
         " values(last_insert_rowid(),'%s','%s',%ld)"
         ";";
