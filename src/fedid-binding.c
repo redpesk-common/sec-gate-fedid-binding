@@ -105,6 +105,10 @@ static void fedSocialIdps(afb_req_t request,
     if (err < 0)
         goto end;
 
+    // check parameters
+    if ((pseudo == NULL || *pseudo == '\0') && (email == NULL || *email == '\0'))
+        goto end;
+
     // get the idps
     count = sqlUserLinkIdps(pseudo, email, &fedIdps);
     if (count < 0)
@@ -140,6 +144,10 @@ static void fedUserExist(afb_req_t request,
     if (err < 0)
         goto end;
     fedUser = afb_data_ro_pointer(data);
+
+    // check parameters
+    if ((fedUser->pseudo == NULL || *fedUser->pseudo == '\0') && (fedUser->email == NULL || *fedUser->email == '\0'))
+        goto end;
 
     // perform the query
     err = sqlUserExist(fedUser->pseudo, fedUser->email);
@@ -184,6 +192,10 @@ static void fedUserAttr(afb_req_t request,
     if (err < 0)
         goto end;
 
+    // check parameters
+    if (label == NULL || value == NULL || *label == '\0' || *value == '\0')
+        goto end;
+
     // perform the query
     err = sqlUserAttrCheck(label, value);
     status = err >= 0 ? err : reportSqlError(request, err, "sqlUserAttrCheck");
@@ -217,6 +229,12 @@ static void fedUserRegister(afb_req_t request,
     if (err < 0)
         goto end;
     fedSocial = afb_data_ro_pointer(data);
+
+    // check parameters
+    if (fedSocial->idp == NULL || *fedSocial->idp == '\0' || fedSocial->fedkey == NULL || *fedSocial->fedkey == '\0')
+        goto end;
+    if ((fedUser->pseudo == NULL || *fedUser->pseudo == '\0') && (fedUser->email == NULL || *fedUser->email == '\0'))
+        goto end;
 
     // register now
     err = sqlRegisterFromSocial(fedSocial, fedUser);
@@ -263,6 +281,12 @@ static void fedUserFederate(afb_req_t request,
         goto end;
     fedSocial = afb_data_ro_pointer(data);
 
+    // check parameters
+    if (fedSocial->idp == NULL || *fedSocial->idp == '\0' || fedSocial->fedkey == NULL || *fedSocial->fedkey == '\0')
+        goto end;
+    if ((fedUser->pseudo == NULL || *fedUser->pseudo == '\0') && (fedUser->email == NULL || *fedUser->email == '\0'))
+        goto end;
+
     // register now
     err = sqlFederateFromSocial(fedSocial, fedUser);
     status =
@@ -306,6 +330,10 @@ static void fedSocialCheck(afb_req_t request,
     if (err < 0)
         goto end;
     fedSocial = afb_data_ro_pointer(data);
+
+    // check parameters
+    if (fedSocial->idp == NULL || *fedSocial->idp == '\0' || fedSocial->fedkey == NULL || *fedSocial->fedkey == '\0')
+        goto end;
 
     // register now
     err = sqlQueryFromSocial(fedSocial, &fedUser);

@@ -139,7 +139,7 @@ int sqlUserAttrCheck(const char *attrLabel, const char *attrValue)
     sqlite3_stmt *queryRqt;
     int err, status;
     char *queryStr;
-    int queryLen = asprintf(&queryStr, queryPattern, attrLabel, attrValue);
+    int queryLen = asprintf(&queryStr, queryPattern, attrLabel, attrValue ?: "");
     if (queryLen < 0)
         return -1;
     PRINT("[QUERY: %s]\n", queryStr);
@@ -172,44 +172,19 @@ int sqlUserAttrCheck(const char *attrLabel, const char *attrValue)
 
 int sqlUserExist(const char *pseudo, const char *email)
 {
-    static char queryPattern[] =
-        "select rowid from fed_users"
-        " where pseudo='%s' or email='%s'"
-        ";";
+    int rc, result = 0;
 
-    sqlite3_stmt *queryRqt;
-    int err, status;
-    char *queryStr;
-    int queryLen = asprintf(&queryStr, queryPattern, pseudo, email);
-    if (queryLen < 0)
-        return -1;
-    PRINT("[QUERY: %s]\n", queryStr);
-
-    // compile request into byte code
-    err = sqlite3_prepare_v3(dbFd, queryStr, queryLen, 0, &queryRqt, NULL);
-    free(queryStr);
-    if (err != SQLITE_OK) {
-        recordError();
-        return -2;
+    if (pseudo != NULL && *pseudo != '\0') {
+        rc = sqlUserAttrCheck("pseudo", pseudo);
+        if (rc > 0)
+            result = 1;
     }
-
-    // select should return one or no row
-    switch (sqlite3_step(queryRqt)) {
-    case SQLITE_DONE:
-        status = 0;
-        break;
-
-    case SQLITE_ROW:
-        status = 1;
-        break;
-
-    default:
-        recordError();
-        status = -2;
-        break;
+    if (result == 0 && email != NULL && *email != '\0') {
+        rc = sqlUserAttrCheck("email", email);
+        if (rc > 0)
+            result = 1;
     }
-    sqlite3_finalize(queryRqt);
-    return status;
+    return result;
 }
 
 static int execCommands(char *commands)
@@ -249,12 +224,17 @@ int sqlRegisterFromSocial(const fedSocialRawT *fedSocial,
         " values(last_insert_rowid(),'%s','%s',%ld)"
         ";";
 
+    int queryLen;
     unsigned long timeStamp = (unsigned long)time(NULL);
+    const char *pseudo = fedUser->pseudo == NULL ? "" : fedUser->pseudo;
+    const char *email = fedUser->email == NULL ? "" : fedUser->email;
+    const char *name = fedUser->name == NULL ? "" : fedUser->name;
+    const char *avatar = fedUser->avatar == NULL ? "" : fedUser->avatar;
+    const char *company = fedUser->company == NULL ? "" : fedUser->company;
     char *queryStr;
-    int queryLen =
-        asprintf(&queryStr, queryPattern, fedUser->pseudo, fedUser->email,
-                 fedUser->name, fedUser->avatar, fedUser->company, timeStamp,
-                 fedSocial->idp, fedSocial->fedkey, timeStamp);
+    queryLen = asprintf(&queryStr, queryPattern, pseudo, email,
+                        name, avatar, company, timeStamp,
+                        fedSocial->idp, fedSocial->fedkey, timeStamp);
     if (queryLen < 0)
         return -1;
     PRINT("[QUERY: %s]\n", queryStr);
@@ -272,10 +252,11 @@ int sqlFederateFromSocial(const fedSocialRawT *fedSocial,
         ";";
 
     unsigned long timeStamp = (unsigned long)time(NULL);
+    const char *pseudo = fedUser->pseudo == NULL ? "NULL" : fedUser->pseudo;
+    const char *email = fedUser->email == NULL ? "NULL" : fedUser->email;
     char *queryStr;
-    int queryLen =
-        asprintf(&queryStr, queryPattern, fedUser->email, fedUser->pseudo,
-                 fedSocial->idp, fedSocial->fedkey, timeStamp);
+    int queryLen = asprintf(&queryStr, queryPattern, email, pseudo,
+                            fedSocial->idp, fedSocial->fedkey, timeStamp);
     if (queryLen < 0)
         return -1;
     PRINT("[QUERY: %s]\n", queryStr);
@@ -358,10 +339,12 @@ int sqlUserLinkIdps(const char *pseudo, const char *email, char ***fedIdps)
         ";";
 
     sqlite3_stmt *queryRqt;
-    int err, status, count = 0;
+    int err, queryLen, status, count = 0;
     char *queryStr;
     char **idps;
-    int queryLen = asprintf(&queryStr, queryPattern, pseudo, email);
+    pseudo = pseudo == NULL ? "NULL" : pseudo;
+    email = email == NULL ? "NULL" : email;
+    queryLen = asprintf(&queryStr, queryPattern, pseudo, email);
     if (queryLen < 0)
         return -1;
     PRINT("[QUERY: %s]\n", queryStr);
